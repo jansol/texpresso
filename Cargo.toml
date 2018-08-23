@@ -1,0 +1,6 @@
+[package]
+name = "squish-rs"
+version = "0.1.0"
+authors = ["Jan Solanti <jhs@psonet.com>"]
+
+[dependencies]
