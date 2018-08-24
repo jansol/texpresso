@@ -24,6 +24,8 @@
 //! A pure Rust DXT1/3/5 compressor and decompressor based on Simon Brown's
 //! **libsquish**
 
+extern crate byteorder;
+
 mod math;
 mod colourblock;
 mod colourset;

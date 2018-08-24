@@ -44,14 +44,14 @@ impl ColourSet {
 
         // create the minimal set
         for i in 0..rgba.len() {
-            // skip this pixel if it's disabled
+            // disabled pixels are transparent black
             let bit = 1u32 << i;
             if (mask & bit) == 0 {
                 set.remap[i] = -1;
                 continue;
             }
 
-            // if using DXT1, skip transparent pixels
+            // DXT uses binary alpha
             if (format == Format::Dxt1) && (rgba[i][3] < 128u8) {
                 set.remap[i] = -1;
                 set.transparent = true;
@@ -128,6 +128,7 @@ impl ColourSet {
             let j = self.remap[i];
 
             if j == -1 {
+                // palette has 4 elements, last one is transparent black if transparency is used
                 target[i] = 3;
             } else {
                 target[i] = source[j as usize];
