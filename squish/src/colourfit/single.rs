@@ -20,8 +20,8 @@
 // TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
 // SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+
 use std::u32;
-use std::io::{Result, Write};
 
 use ::{Format, f32_to_i32_clamped};
 use ::colourblock::*;
@@ -39,7 +39,7 @@ pub struct SingleColourFit<'a> {
     index: u8,
     error: u32,
     best_error: u32,
-    best_compressed: [u8; 16],
+    best_compressed: Vec<u8>,
 }
 
 impl<'a> SingleColourFit<'a> {
@@ -52,7 +52,7 @@ impl<'a> SingleColourFit<'a> {
             index: 0,
             error: u32::MAX,
             best_error: u32::MAX,
-            best_compressed: [0u8; 16],
+            best_compressed: Vec::with_capacity(16),
         }
     }
 
@@ -132,12 +132,13 @@ impl<'a> SingleColourFit<'a> {
             self.colourset.remap_indices(&[self.index; 16], &mut indices);
 
             // build the compressed blob
+            self.best_compressed.clear();
             write_colour_block3(
                 &self.start,
                 &self.end,
                 &indices,
-                &mut &mut self.best_compressed[..] as &mut Write
-            ).unwrap();
+                &mut self.best_compressed
+            );
 
             // save the error
             self.best_error = self.error;
@@ -162,28 +163,29 @@ impl<'a> SingleColourFit<'a> {
             self.colourset.remap_indices(&[self.index; 16], &mut indices);
 
             // build the compressed blob
+            self.best_compressed.clear();
             write_colour_block4(
                 &self.start,
                 &self.end,
                 &indices,
-                &mut &mut self.best_compressed[..] as &mut Write
-            ).unwrap();
+                &mut self.best_compressed
+            );
 
             // save the error
             self.best_error = self.error;
         }
     }
 
-    fn write(&self, block: &mut Write) -> Result<usize> {
-        block.write(&self.best_compressed[..])
+    fn write(&self, block: &mut Vec<u8>) {
+        block.extend_from_slice(&self.best_compressed);
     }
 }
 
 impl<'a> ColourFit for SingleColourFit<'a> {
     fn compress(
         &mut self,
-        block: &mut Write
-    ) -> Result<usize> {
+        block: &mut Vec<u8>
+    ) {
         if self.is_dxt1() {
             self.compress3();
             if !self.is_transparent() {
@@ -193,6 +195,6 @@ impl<'a> ColourFit for SingleColourFit<'a> {
             self.compress4();
         }
 
-        self.write(block)
+        self.write(block);
     }
 }

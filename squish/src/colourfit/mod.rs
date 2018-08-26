@@ -21,8 +21,6 @@
 // SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-use std::io::{Result, Write};
-
 //mod cluster;
 //mod range;
 mod single;
@@ -34,5 +32,5 @@ pub use self::single::SingleColourFit;
 //pub use self::range::RangeFit;
 
 pub trait ColourFit {
-    fn compress(&mut self, block: &mut Write) -> Result<usize>;
+    fn compress(&mut self, block: &mut Vec<u8>);
 }

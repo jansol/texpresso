@@ -20,7 +20,7 @@
 // TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
 // SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-use std::io::{Result, Write};
+
 use std::mem;
 
 use byteorder::{ByteOrder, LittleEndian, WriteBytesExt};
@@ -43,11 +43,11 @@ fn write_block(
     a: u16,
     b: u16,
     indices: &[u8; 16],
-    block: &mut Write
-) -> Result<usize> {
+    block: &mut Vec<u8>
+) {
     // write endpoints
-    block.write_u16::<LittleEndian>(a)?;
-    block.write_u16::<LittleEndian>(b)?;
+    block.write_u16::<LittleEndian>(a);
+    block.write_u16::<LittleEndian>(b);
 
     // write 2-bit LUT indices
     let mut packed = [0u8; 4];
@@ -58,7 +58,7 @@ fn write_block(
                     | (indices[4*i] & 0x03);
     }
 
-    block.write(&packed)
+    block.extend_from_slice(&packed);
 }
 
 
@@ -66,8 +66,8 @@ pub fn write_colour_block3(
     start: &Vec3,
     end: &Vec3,
     indices: &[u8; 16],
-    block: &mut Write
-) -> Result<usize> {
+    block: &mut Vec<u8>
+) {
     let mut a = pack_565(start);
     let mut b = pack_565(end);
 
@@ -85,7 +85,7 @@ pub fn write_colour_block3(
         }
     }
 
-    write_block(a, b, &remapped, block)
+    write_block(a, b, &remapped, block);
 }
 
 
@@ -93,8 +93,8 @@ pub fn write_colour_block4(
     start: &Vec3,
     end: &Vec3,
     indices: &[u8; 16],
-    block: &mut Write
-) -> Result<usize>  {
+    block: &mut Vec<u8>
+) {
     let mut a = pack_565(start);
     let mut b = pack_565(end);
 
@@ -111,7 +111,7 @@ pub fn write_colour_block4(
     }
     // if a == b, use index 0 for everything, i.e. no need to do anything
 
-    write_block(a, b, &remapped, block)
+    write_block(a, b, &remapped, block);
 }
 
 

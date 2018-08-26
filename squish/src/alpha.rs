@@ -20,7 +20,7 @@
 // TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
 // SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-use std::io::{Result, Write};
+
 use std::u32;
 
 use ::f32_to_i32_clamped;
@@ -29,8 +29,8 @@ use ::f32_to_i32_clamped;
 pub fn compress_alpha_dxt3(
     rgba: &[[u8; 4]; 16],
     mask: u32,
-    block: &mut Write
-) -> Result<usize> {
+    block: &mut Vec<u8>
+) {
     let mut tmp = [0u8; 8];
     for i in 0..tmp.len() {
         // quantise down to 4 bits
@@ -53,7 +53,7 @@ pub fn compress_alpha_dxt3(
         tmp[i] = quant1 | (quant2 << 4)
     }
 
-    block.write(&tmp[..])
+    block.extend_from_slice(&tmp);
 }
 
 pub fn decompress_alpha_dxt3(rgba: &mut [[u8; 4]; 16], bytes: &[u8]) {
@@ -127,10 +127,10 @@ fn write_alpha_block(
     alpha0: u8,
     alpha1: u8,
     indices: &[u8; 16],
-    block: &mut Write
-) -> Result<usize> {
+    block: &mut Vec<u8>
+) {
     // write endpoints
-    let mut total = block.write(&[alpha0, alpha1])?;
+    block.extend_from_slice(&[alpha0, alpha1]);
 
     // pack the indices with 3 bits each
     for i in 0..2 {
@@ -146,18 +146,16 @@ fn write_alpha_block(
         for j in 0..tmp.len() {
             tmp[j] = ((value >> 8*j) & 0xff) as u8;
         }
-        total += block.write(&tmp[..])?;
+        block.extend_from_slice(&tmp);
     }
-
-    Ok(total)
 }
 
 fn write_alpha_block5(
     alpha0: u8,
     alpha1: u8,
     indices: &[u8; 16],
-    block: &mut Write
-) -> Result<usize> {
+    block: &mut Vec<u8>
+) {
     if alpha0 > alpha1 {
         // invert indices
         let mut swapped = *indices;
@@ -171,10 +169,10 @@ fn write_alpha_block5(
         }
 
         // write with endpoints swapped
-        write_alpha_block(alpha1, alpha0, &swapped, block)
+        write_alpha_block(alpha1, alpha0, &swapped, block);
     } else {
         // write as-is
-        write_alpha_block(alpha0, alpha1, indices, block)
+        write_alpha_block(alpha0, alpha1, indices, block);
     }
 }
 
@@ -182,8 +180,8 @@ fn write_alpha_block7(
     alpha0: u8,
     alpha1: u8,
     indices: &[u8; 16],
-    block: &mut Write
-) -> Result<usize> {
+    block: &mut Vec<u8>
+) {
     if alpha0 < alpha1 {
         // invert indices
         let mut swapped = *indices;
@@ -196,18 +194,18 @@ fn write_alpha_block7(
         }
 
         // write with endpoints swapped
-        write_alpha_block(alpha1, alpha0, &swapped, block)
+        write_alpha_block(alpha1, alpha0, &swapped, block);
     } else {
         // write as-is
-        write_alpha_block(alpha0, alpha1, indices, block)
+        write_alpha_block(alpha0, alpha1, indices, block);
     }
 }
 
 pub fn compress_alpha_dxt5(
     rgba: &[[u8; 4]; 16],
     mask: u32,
-    block: &mut Write
-) -> Result<usize> {
+    block: &mut Vec<u8>
+) {
     // get range for 5-alpha and 7-alpha interpolation
     let mut min5 = 255u8;
     let mut max5 = 0u8;
@@ -272,9 +270,9 @@ pub fn compress_alpha_dxt5(
 
     // save the block with the least error
     if err5 <= err7 {
-        write_alpha_block5(min5, max5, &indices5, block)
+        write_alpha_block5(min5, max5, &indices5, block);
     } else {
-        write_alpha_block7(min7, max7, &indices7, block)
+        write_alpha_block7(min7, max7, &indices7, block);
     }
 }
 

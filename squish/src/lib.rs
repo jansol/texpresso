@@ -24,10 +24,10 @@
 //! A pure Rust DXT1/3/5 compressor and decompressor based on Simon Brown's
 //! **libsquish**
 
-
-use std::io::{Result, Write};
-
 extern crate byteorder;
+
+use std::str::FromStr;
+use std::fmt;
 
 mod alpha;
 mod colourblock;
@@ -40,11 +40,35 @@ use colourfit::{ColourFit, SingleColourFit};
 use colourset::ColourSet;
 
 /// Defines a compression format
-#[derive(Clone, Copy, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Format {
     Dxt1,
     Dxt3,
     Dxt5,
+}
+
+#[derive(Debug)]
+pub enum ParseFormatError {
+    InvalidFormat
+}
+
+impl fmt::Display for ParseFormatError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "InvalidFormat")
+    }
+}
+
+impl FromStr for Format {
+    type Err = ParseFormatError;
+
+    fn from_str(s: &str) -> Result<Format, ParseFormatError> {
+        match s.to_lowercase().as_str() {
+            "dxt1" => Ok(Format::Dxt1),
+            "dxt3" => Ok(Format::Dxt3),
+            "dxt5" => Ok(Format::Dxt5),
+            _ => Err(ParseFormatError::InvalidFormat)
+        }
+    }
 }
 
 /// Defines a compression algorithm
@@ -69,7 +93,12 @@ impl Default for CompressionAlgorithm {
 /// RGB colour channel weights for use in block fitting
 pub type ColourWeights = [f32; 3];
 
+/// Uniform weights for each colour channel
+#[allow(unused)]
+pub const COLOUR_WEIGHTS_UNIFORM: ColourWeights = [1.0, 1.0, 1.0];
+
 /// Weights based on the perceived brightness of each colour channel
+#[allow(unused)]
 pub const COLOUR_WEIGHTS_PERCEPTUAL: ColourWeights = [0.2126, 0.7152, 0.0722];
 
 #[derive(Clone, Copy)]
@@ -78,8 +107,8 @@ pub struct CompressorParams {
     pub algorithm: CompressionAlgorithm,
 
     /// Weigh the relative importance of each colour channel when fitting
-    /// (defaults to equal weights)
-    pub weights: Option<ColourWeights>,
+    /// (defaults to perceptual weights)
+    pub weights: ColourWeights,
 
     /// Weigh colour by alpha during cluster fit (defaults to false)
     ///
@@ -92,7 +121,7 @@ impl Default for CompressorParams {
     fn default() -> Self {
         CompressorParams {
             algorithm: CompressionAlgorithm::default(),
-            weights: None,
+            weights: ColourWeights::default(),
             weigh_colour_by_alpha: false,
         }
     }
@@ -154,18 +183,16 @@ fn compress_block_masked(
     rgba: [[u8; 4]; 16],
     mask: u32,
     format: Format,
-    params: Option<CompressorParams>,
-    output: &mut Write
-) -> Result<usize> {
+    params: CompressorParams,
+    output: &mut Vec<u8>
+) {
     use CompressionAlgorithm as Algo;
-    let params = params.unwrap_or(CompressorParams::default());
-    let mut total = 0;
 
     // compress alpha separately if necessary
     if format == Format::Dxt3 {
-        total += compress_alpha_dxt3(&rgba, mask, output)?;
+        compress_alpha_dxt3(&rgba, mask, output);
     } else if format == Format::Dxt5 {
-        total += compress_alpha_dxt5(&rgba, mask, output)?;
+        compress_alpha_dxt5(&rgba, mask, output);
     }
 
     // create the minimal point set
@@ -182,22 +209,20 @@ fn compress_block_masked(
             &colours,
             format
         );
-        total += fit.compress(output)?;
+        fit.compress(output);
     //} else if (params.algorithm == Algo::RangeFit) || (colours.count() == 0) {
     //    let mut fit = RangeFit::new(
     //        &colours,
     //        format
     //    );
-    //    total += fit.compress(output)?;
+    //    fit.compress(output);
     //} else {
     //    let mut fit = ClusterFit::new(
     //        &colours,
     //        format
     //    );
-    //    total += fit.compress(output)?;
+    //    fit.compress(output);
     //}
-
-    Ok(total)
 }
 
 /// Decompresses a 4x4 block of pixels
@@ -223,12 +248,9 @@ pub fn compress(
     width: usize,
     height: usize,
     format: Format,
-    params: Option<CompressorParams>,
-    output: &mut Write
-) -> Result<usize> {
-    // keep track of output bytes written
-    let mut total = 0;
-
+    params: CompressorParams,
+    output: &mut Vec<u8>
+) {
     // loop over blocks
     for y in 0..height/4 {
         let y = 4*y;
@@ -260,11 +282,9 @@ pub fn compress(
             }
 
             // compress block into output
-            total += compress_block_masked(source_rgba, mask, format, params, output)?;
+            compress_block_masked(source_rgba, mask, format, params, output);
         }
     }
-
-    Ok(total)
 }
 
 fn f32_to_i32_clamped(a: f32, limit: i32) -> i32 {
