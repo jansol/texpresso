@@ -1,0 +1,20 @@
+[package]
+authors = ["Jan Solanti <jhs@psonet.com>"]
+license = "MIT"
+name = "squish_cli"
+version = "0.1.0"
+
+[[bin]]
+name = "squish"
+path = "src/main.rs"
+doc = false
+
+[dependencies]
+ddsfile = "^0.2.3"
+jpeg-decoder = "^0.1.15"
+png = "^0.12.0"
+structopt = "^0.2.10"
+
+[dependencies.squish]
+path = "../squish"
+version = "^0.1"
