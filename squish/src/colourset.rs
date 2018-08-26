@@ -68,7 +68,7 @@ impl ColourSet {
                     let z = rgba[i][2] as f32 / 255f32;
 
                     // ensure weight is always nonzero even when alpha is not
-                    let w = (rgba[i][3] + 1) as f32 / 256f32;
+                    let w = (rgba[i][3] as i32 + 1) as f32 / 256f32;
 
                     // store point
                     set.points[set.count] = Vec3::new(x, y, z);
@@ -91,7 +91,7 @@ impl ColourSet {
                     let index = set.remap[j];
                     
                     // ensure weight is always nonzero even when alpha is not
-                    let w = (rgba[i][3] + 1) as f32 / 256f32;
+                    let w = (rgba[i][3] as i32 + 1) as f32 / 256f32;
 
                     // map this point to its duplicate and increase the duplicate's weight
                     set.weights[index as usize] += if alpha_weighted { w } else { 1f32 };
