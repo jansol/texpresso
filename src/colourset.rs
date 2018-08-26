@@ -123,8 +123,12 @@ impl ColourSet {
         &self.weights[..self.count]
     }
 
-    pub fn remap_indices(&mut self, source: &[u8; 16], target: &mut [u8; 16]) {
-        for i in 0..source.len() {
+    pub fn count(&self) -> usize {
+        self.count
+    }
+
+    pub fn remap_indices(&self, source: &[u8; 16], target: &mut [u8; 16]) {
+        for i in 0..target.len() {
             let j = self.remap[i];
 
             if j == -1 {

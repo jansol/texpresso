@@ -26,7 +26,7 @@ use std::mem;
 use byteorder::{ByteOrder, LittleEndian, WriteBytesExt};
 
 use math::Vec3;
-use super::f32_to_i32_clamped;
+use ::f32_to_i32_clamped;
 
 
 /// Convert a colour value to a little endian u16
@@ -45,8 +45,6 @@ fn write_block(
     indices: &[u8; 16],
     block: &mut Write
 ) -> Result<usize> {
-    assert!(indices.len() == 16);
-
     // write endpoints
     block.write_u16::<LittleEndian>(a)?;
     block.write_u16::<LittleEndian>(b)?;
@@ -73,19 +71,15 @@ pub fn write_colour_block3(
     let mut a = pack_565(start);
     let mut b = pack_565(end);
 
-    // remap indices
-    let mut remapped = [0u8; 16];
-
-    if a <= b {
-        // use indices as-is
-        remapped = *indices;
-    } else {
+    let mut remapped = *indices;
+    
+    if a > b {
         // swap a, b and indices referring to them
         mem::swap(&mut a, &mut b);
-        for (mut remapped, index) in remapped.iter_mut().zip(indices.iter()) {
-            *remapped = match *index {
-                    x if x == 0 => 1,
-                    x if x == 1 => 0,
+        for index in &mut remapped[..] {
+            *index = match *index {
+                    0 => 1,
+                    1 => 0,
                     x => x
             };
         }
@@ -108,8 +102,9 @@ pub fn write_colour_block4(
     let mut remapped = [0u8; 16];
     if a < b {
         mem::swap(&mut a, &mut b);
-        remapped.iter_mut() .zip(indices.iter())
-                .map(|(mut rem, idx)| *rem = (idx ^ 0x01) & 0x03);
+        for (mut remapped, index) in remapped.iter_mut().zip(indices.iter()) {
+            *remapped = (index ^ 0x01) & 0x03;
+        }
     } else if a > b {
         // use indices as-is
         remapped = *indices;
@@ -138,6 +133,8 @@ fn unpack_565(packed: u16) -> [u8; 4] {
 
 /// Decompress a DXT block to 4x4 RGBA pixels
 pub fn decompress_colour(bytes: &[u8], is_dxt1: bool) -> [[u8; 4]; 16] {
+    assert!(bytes.len() == 8);
+
     let mut codes = [0u8; 4];
 
     // unpack endpoints
@@ -162,7 +159,7 @@ pub fn decompress_colour(bytes: &[u8], is_dxt1: bool) -> [[u8; 4]; 16] {
 
     // fill in alpha for intermediate values
     codes[8+3] = 255u8;
-	codes[12+3] = if is_dxt1 && (a <= b) {0u8} else {255u8};
+    codes[12+3] = if is_dxt1 && (a <= b) {0u8} else {255u8};
 
     // unpack LUT indices
     let mut indices = [0u8; 16];

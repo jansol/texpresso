@@ -24,14 +24,23 @@
 //! A pure Rust DXT1/3/5 compressor and decompressor based on Simon Brown's
 //! **libsquish**
 
+
+use std::io::{Result, Write};
+
 extern crate byteorder;
 
-mod math;
+mod alpha;
 mod colourblock;
+mod colourfit;
 mod colourset;
+mod math;
+
+use alpha::*;
+use colourfit::{ColourFit, SingleColourFit};
+use colourset::ColourSet;
 
 /// Defines a compression format
-#[derive(PartialEq, Eq)]
+#[derive(Clone, Copy, Eq, PartialEq)]
 pub enum Format {
     Dxt1,
     Dxt3,
@@ -39,26 +48,22 @@ pub enum Format {
 }
 
 /// Defines a compression algorithm
+#[derive(Clone, Copy)]
 pub enum CompressionAlgorithm {
+    /// Very fast, very low quality
+    SingleColourFit,
+
     /// Fast, low quality
     ColourRangeFit,
 
-    /// Slow, high quality (default)
-    ColourClusterFit,
-
-    /// Very slow, very high quality
-    ColourIterativeClusterFit,
-}
-
-/// A block of owned compressed data. Variants are for different block sizes
-enum CompressedBlock {
-    Dxt1([u8; 8]),
-    Dxt3([u8; 8], [u8; 8]),
-    Dxt5([u8; 16]),
+    /// Very slow, very high quality (default with 1 iteration)
+    ColourClusterFit{max_iterations: usize},
 }
 
 impl Default for CompressionAlgorithm {
-    fn default() -> Self { CompressionAlgorithm::ColourClusterFit }
+    fn default() -> Self {
+        CompressionAlgorithm::ColourClusterFit{max_iterations: 1}
+    }
 }
 
 /// RGB colour channel weights for use in block fitting
@@ -67,6 +72,7 @@ pub type ColourWeights = [f32; 3];
 /// Weights based on the perceived brightness of each colour channel
 pub const COLOUR_WEIGHTS_PERCEPTUAL: ColourWeights = [0.2126, 0.7152, 0.0722];
 
+#[derive(Clone, Copy)]
 pub struct CompressorParams {
     /// The compression algorithm to be used
     pub algorithm: CompressionAlgorithm,
@@ -107,6 +113,17 @@ pub fn decompress(
     vec![]
 }
 
+/// Returns how many bytes a 4x4 block of pixels will take after compression,
+/// given the compression format
+fn bytes_per_block(format: Format) -> usize {
+    // Compressed block size in bytes
+    match format {
+        Format::Dxt1 => 8,
+        Format::Dxt3 => 16,
+        Format::Dxt5 => 16,
+    } 
+}
+
 /// Computes the amount of space in bytes needed for the compressed image
 ///
 /// * `width`  - Width of the uncompressed image
@@ -126,19 +143,6 @@ pub fn compute_compressed_size(
     n_blocks * blocksize
 }
 
-/// Compresses a 4x4 block of pixels
-///
-/// * `rgba`   - The uncompressed block of pixels
-/// * `format` - The desired compression format
-/// * `params` - Additional compressor parameters
-fn compress_block(
-    rgba: [[u8; 4]; 16],
-    format: Format,
-    params: Option<CompressorParams>
-) -> () {
-    compress_block_masked(rgba, 0xffffffff, format, params)
-}
-
 /// Compresses a 4x4 block of pixels, masking out some pixels e.g. for padding the
 /// image to a multiple of the block size.
 ///
@@ -150,9 +154,50 @@ fn compress_block_masked(
     rgba: [[u8; 4]; 16],
     mask: u32,
     format: Format,
-    params: Option<CompressorParams>
-) -> () {
+    params: Option<CompressorParams>,
+    output: &mut Write
+) -> Result<usize> {
+    use CompressionAlgorithm as Algo;
     let params = params.unwrap_or(CompressorParams::default());
+    let mut total = 0;
+
+    // compress alpha separately if necessary
+    if format == Format::Dxt3 {
+        total += compress_alpha_dxt3(&rgba, mask, output)?;
+    } else if format == Format::Dxt5 {
+        total += compress_alpha_dxt5(&rgba, mask, output)?;
+    }
+
+    // create the minimal point set
+    let colours = ColourSet::new(
+        &rgba,
+        mask, 
+        format,
+        params.weigh_colour_by_alpha
+    );
+
+    // compress with appropriate compression algorithm
+    //if (colours.count() == 1) || (params.algorithm == Algo::SingleColourFit) {
+        let mut fit = SingleColourFit::new(
+            &colours,
+            format
+        );
+        total += fit.compress(output)?;
+    //} else if (params.algorithm == Algo::RangeFit) || (colours.count() == 0) {
+    //    let mut fit = RangeFit::new(
+    //        &colours,
+    //        format
+    //    );
+    //    total += fit.compress(output)?;
+    //} else {
+    //    let mut fit = ClusterFit::new(
+    //        &colours,
+    //        format
+    //    );
+    //    total += fit.compress(output)?;
+    //}
+
+    Ok(total)
 }
 
 /// Decompresses a 4x4 block of pixels
@@ -160,7 +205,7 @@ fn compress_block_masked(
 /// * `rgba`   - The compressed block of pixels
 /// * `format` - The compression format of the data
 fn decompress_block(
-    rgba: &CompressedBlock,
+    rgba: &[u8],
     format: Format,
 ) -> () {
 
@@ -178,20 +223,48 @@ pub fn compress(
     width: usize,
     height: usize,
     format: Format,
-    params: Option<CompressorParams>
-) -> Vec<u8> {
-    vec![]
-}
+    params: Option<CompressorParams>,
+    output: &mut Write
+) -> Result<usize> {
+    // keep track of output bytes written
+    let mut total = 0;
 
-/// Returns how many bytes a 4x4 block of pixels will take after compression,
-/// given the compression format
-fn bytes_per_block(format: Format) -> usize {
-    // Compressed block size in bytes
-    match format {
-        Format::Dxt1 => 8,
-        Format::Dxt3 => 16,
-        Format::Dxt5 => 16,
-    } 
+    // loop over blocks
+    for y in 0..height/4 {
+        let y = 4*y;
+        for x in 0..width/4 {
+            let x = 4*x;
+
+            // build the 4x4 block of pixels
+            let mut source_rgba = [[0u8; 4]; 16];
+            let mut mask = 0u32;
+            for py in 0..4 {
+                for px in 0..4 {
+                    let index = 4*py + px;
+
+                    // get position in source image
+                    let sx = x + px;
+                    let sy = y + py;
+
+                    // enable pixel if within bounds
+                    if sx < width && sy < height {
+                        // copy pixel value
+                        let src_index = width*sy + sx;
+                        &mut source_rgba[index][..]
+                            .clone_from_slice(&rgba[src_index..src_index+4]);
+
+                        // enable pixel
+                        mask |= 1 << index;
+                    }
+                }
+            }
+
+            // compress block into output
+            total += compress_block_masked(source_rgba, mask, format, params, output)?;
+        }
+    }
+
+    Ok(total)
 }
 
 fn f32_to_i32_clamped(a: f32, limit: i32) -> i32 {
