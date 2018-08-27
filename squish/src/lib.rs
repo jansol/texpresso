@@ -74,9 +74,6 @@ impl FromStr for Format {
 /// Defines a compression algorithm
 #[derive(Clone, Copy)]
 pub enum CompressionAlgorithm {
-    /// Very fast, very low quality
-    SingleColourFit,
-
     /// Fast, low quality
     ColourRangeFit,
 
@@ -204,7 +201,9 @@ fn compress_block_masked(
     );
 
     // compress with appropriate compression algorithm
-    //if (colours.count() == 1) || (params.algorithm == Algo::SingleColourFit) {
+    //if (colours.count() == 1) {
+        // single colour fit can't handle fully transparent blocks,
+        // hence the set has to contain at least 1 colour
         let mut fit = SingleColourFit::new(
             &colours,
             format
@@ -271,8 +270,8 @@ pub fn compress(
                     // enable pixel if within bounds
                     if sx < width && sy < height {
                         // copy pixel value
-                        let src_index = width*sy + sx;
-                        &mut source_rgba[index][..]
+                        let src_index = 4 * (width*sy + sx);
+                        &mut source_rgba[index]
                             .clone_from_slice(&rgba[src_index..src_index+4]);
 
                         // enable pixel

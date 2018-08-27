@@ -35,7 +35,7 @@ fn pack_565(colour: &Vec3) -> u16 {
     let g = f32_to_i32_clamped(63.0*colour.y(), 63) as u8;
     let b = f32_to_i32_clamped(31.0*colour.z(), 31) as u8;
 
-    LittleEndian::read_u16(&[ r << 3 | (g >> 3), (g << 5) | b])
+    LittleEndian::read_u16(&[(g << 5) | b, (r << 3) | (g >> 3)])
 }
 
 
@@ -53,7 +53,7 @@ fn write_block(
     let mut packed = [0u8; 4];
     for i in 0..packed.len() {
         packed[i] =  ((indices[4*i+3] & 0x03) << 6)
-                    | ((indices[4*i+2] & 0x03) << 2)
+                    | ((indices[4*i+2] & 0x03) << 4)
                     | ((indices[4*i+1] & 0x03) << 2)
                     | (indices[4*i] & 0x03);
     }
