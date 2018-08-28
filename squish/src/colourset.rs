@@ -28,7 +28,7 @@ pub struct ColourSet {
     count: usize,
     points: [Vec3; 16],
     weights: [f32; 16],
-    remap: [i8; 16], // enough since there are only 16 possible indices
+    remap: [i8; 16],
     transparent: bool,
 }
 
@@ -38,7 +38,7 @@ impl ColourSet {
             count: 0,
             points: [Vec3::new(0f32,0f32,0f32); 16],
             weights: [0f32; 16],
-            remap: [0; 16],
+            remap: [0i8; 16],
             transparent: false,
         };
 
@@ -73,6 +73,7 @@ impl ColourSet {
                     // store point
                     set.points[set.count] = Vec3::new(x, y, z);
                     set.weights[set.count] = if alpha_weighted { w } else { 1f32 };
+                    set.remap[i] = set.count as i8;
 
                     // move to next pixel
                     set.count += 1;
