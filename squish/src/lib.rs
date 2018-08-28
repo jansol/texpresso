@@ -246,6 +246,8 @@ fn decompress_block(
 /// * `height` - The height of the source image
 /// * `format` - The desired compression format
 /// * `params` - Additional compressor parameters
+/// * `output` - Output buffer for the compressed image. Ensure that this has
+/// at least as much space available as `compute_compressed_size` suggests.
 pub fn compress(
     rgba: &[u8],
     width: usize,
@@ -254,7 +256,7 @@ pub fn compress(
     params: CompressorParams,
     output: &mut [u8]
 ) {
-    assert_eq!(output.len(), compute_compressed_size(width, height, format));
+    assert!(output.len() >= compute_compressed_size(width, height, format));
 
     let block_size = bytes_per_block(format);
     let blocks_per_col = (height+3)/4;
