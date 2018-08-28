@@ -43,11 +43,11 @@ fn write_block(
     a: u16,
     b: u16,
     indices: &[u8; 16],
-    block: &mut Vec<u8>
+    block: &mut [u8]
 ) {
     // write endpoints
-    block.write_u16::<LittleEndian>(a).unwrap();
-    block.write_u16::<LittleEndian>(b).unwrap();
+    <&mut [u8]>::write_u16::<LittleEndian>(&mut &mut block[0..2], a).unwrap();
+    <&mut [u8]>::write_u16::<LittleEndian>(&mut &mut block[2..4], b).unwrap();
 
     // write 2-bit LUT indices
     let mut packed = [0u8; 4];
@@ -58,7 +58,7 @@ fn write_block(
                     | (indices[4*i] & 0x03);
     }
 
-    block.extend_from_slice(&packed);
+    block[4..].clone_from_slice(&packed);
 }
 
 
@@ -66,7 +66,7 @@ pub fn write_colour_block3(
     start: &Vec3,
     end: &Vec3,
     indices: &[u8; 16],
-    block: &mut Vec<u8>
+    block: &mut [u8]
 ) {
     let mut a = pack_565(start);
     let mut b = pack_565(end);
@@ -93,7 +93,7 @@ pub fn write_colour_block4(
     start: &Vec3,
     end: &Vec3,
     indices: &[u8; 16],
-    block: &mut Vec<u8>
+    block: &mut [u8]
 ) {
     let mut a = pack_565(start);
     let mut b = pack_565(end);

@@ -184,15 +184,15 @@ fn compress_block_masked(
     mask: u32,
     format: Format,
     params: CompressorParams,
-    output: &mut Vec<u8>
+    output: &mut [u8]
 ) {
     use CompressionAlgorithm as Algo;
 
     // compress alpha separately if necessary
     if format == Format::Dxt3 {
-        compress_alpha_dxt3(&rgba, mask, output);
+        compress_alpha_dxt3(&rgba, mask, &mut output[..8]);
     } else if format == Format::Dxt5 {
-        compress_alpha_dxt5(&rgba, mask, output);
+        compress_alpha_dxt5(&rgba, mask, &mut output[..8]);
     }
 
     // create the minimal point set
@@ -203,16 +203,19 @@ fn compress_block_masked(
         params.weigh_colour_by_alpha
     );
 
+    let colour_offset = if format == Format::Dxt1 { 0 } else { 8 };
+    let mut colour_block = &mut output[colour_offset..colour_offset+8];
+
     // compress with appropriate compression algorithm
     if colours.count() == 1 {
         // Single colour fit can't handle fully transparent blocks, hence the
         // set has to contain at least 1 colour. It's also not very useful for
         // anything more complex so we only use it for blocks of uniform colour.
         let mut fit = SingleColourFit::new(&colours, format);
-        fit.compress(output);
+        fit.compress(colour_block);
     } else if (params.algorithm == Algo::RangeFit) || (colours.count() == 0) {
         let mut fit = RangeFit::new(&colours, format, params.weights);
-        fit.compress(output);
+        fit.compress(colour_block);
     } else {
         let iterate = params.algorithm == Algo::IterativeClusterFit;
         let mut fit = ClusterFit::new(
@@ -221,7 +224,7 @@ fn compress_block_masked(
             params.weights,
             iterate
         );
-        fit.compress(output);
+        fit.compress(colour_block);
     }
 }
 
@@ -249,13 +252,17 @@ pub fn compress(
     height: usize,
     format: Format,
     params: CompressorParams,
-    output: &mut Vec<u8>
+    output: &mut [u8]
 ) {
+    assert_eq!(output.len(), compute_compressed_size(width, height, format));
+
+    let block_size = bytes_per_block(format);
+    let blocks_per_col = (height+3)/4;
+    let blocks_per_row = (width+3)/4;
+
     // loop over blocks, rounding size to next multiple of 4
-    for y in 0..(height+3)/4 {
-        let y = 4*y;
-        for x in 0..(width+3)/4 {
-            let x = 4*x;
+    for y in 0..blocks_per_col {
+        for x in 0..blocks_per_row {
 
             // build the 4x4 block of pixels
             let mut source_rgba = [[0u8; 4]; 16];
@@ -265,8 +272,8 @@ pub fn compress(
                     let index = 4*py + px;
 
                     // get position in source image
-                    let sx = x + px;
-                    let sy = y + py;
+                    let sx = 4*x + px;
+                    let sy = 4*y + py;
 
                     // enable pixel if within bounds
                     if sx < width && sy < height {
@@ -282,7 +289,9 @@ pub fn compress(
             }
 
             // compress block into output
-            compress_block_masked(source_rgba, mask, format, params, output);
+            let offset = x * block_size + y * blocks_per_row * block_size;
+            let block = &mut output[offset..offset+block_size];
+            compress_block_masked(source_rgba, mask, format, params, block);
         }
     }
 }

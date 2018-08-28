@@ -28,7 +28,7 @@ use ::colourblock::*;
 use ::colourset::ColourSet;
 use ::math::{Sym3x3, Vec3};
 
-use super::ColourFit;
+use super::ColourFitImpl;
 
 pub struct RangeFit<'a> {
     colourset: &'a ColourSet,
@@ -38,7 +38,7 @@ pub struct RangeFit<'a> {
     end: Vec3,
     indices: [u8; 16],
     best_error: f32,
-    best_compressed: Vec<u8>,
+    best_compressed: [u8; 8],
 }
 
 impl<'a> RangeFit<'a> {
@@ -51,7 +51,7 @@ impl<'a> RangeFit<'a> {
             end: Vec3::new(0.0, 0.0, 0.0),
             indices: [0u8; 16],
             best_error: f32::MAX,
-            best_compressed: Vec::with_capacity(16),
+            best_compressed: [0u8; 8],
         };
 
         // cache some values
@@ -150,6 +150,20 @@ impl<'a> RangeFit<'a> {
 
         false
     }
+}
+
+impl<'a> ColourFitImpl<'a> for RangeFit<'a> {
+    fn is_dxt1(&self) -> bool {
+        self.format == Format::Dxt1
+    }
+
+    fn is_transparent(&self) -> bool {
+        self.colourset.is_transparent()
+    }
+
+    fn best_compressed(&'a self) -> &'a [u8] {
+        &self.best_compressed
+    }
 
     fn compress3(&mut self) {
         // create a codebook
@@ -161,7 +175,6 @@ impl<'a> RangeFit<'a> {
 
         if self.compression_helper(&codes) {
             // build the best compressed blob
-            self.best_compressed.clear();
             write_colour_block3(
                 &self.start,
                 &self.end,
@@ -182,7 +195,6 @@ impl<'a> RangeFit<'a> {
 
         if self.compression_helper(&codes) {
             // build the best compressed blob
-            self.best_compressed.clear();
             write_colour_block4(
                 &self.start,
                 &self.end,
@@ -190,25 +202,5 @@ impl<'a> RangeFit<'a> {
                 &mut self.best_compressed
             );
         }
-    }
-}
-
-
-
-impl<'a> ColourFit for RangeFit<'a> {
-    fn compress(
-        &mut self,
-        block: &mut Vec<u8>
-    ) {
-        if self.is_dxt1() {
-            self.compress3();
-            if !self.is_transparent() {
-                self.compress4();
-            }
-        } else {
-            self.compress4();
-        }
-
-        block.extend_from_slice(&self.best_compressed);
     }
 }

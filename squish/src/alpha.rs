@@ -29,7 +29,7 @@ use ::f32_to_i32_clamped;
 pub fn compress_alpha_dxt3(
     rgba: &[[u8; 4]; 16],
     mask: u32,
-    block: &mut Vec<u8>
+    block: &mut [u8]
 ) {
     let mut tmp = [0u8; 8];
     for i in 0..tmp.len() {
@@ -53,7 +53,7 @@ pub fn compress_alpha_dxt3(
         tmp[i] = quant1 | (quant2 << 4)
     }
 
-    block.extend_from_slice(&tmp);
+    block.clone_from_slice(&tmp);
 }
 
 pub fn decompress_alpha_dxt3(rgba: &mut [[u8; 4]; 16], bytes: &[u8]) {
@@ -127,10 +127,13 @@ fn write_alpha_block(
     alpha0: u8,
     alpha1: u8,
     indices: &[u8; 16],
-    block: &mut Vec<u8>
+    block: &mut [u8]
 ) {
+    let mut buf = [0u8; 8];
+
     // write endpoints
-    block.extend_from_slice(&[alpha0, alpha1]);
+    buf[0] = alpha0;
+    buf[1] = alpha1;
 
     // pack the indices with 3 bits each
     for i in 0..2 {
@@ -142,19 +145,19 @@ fn write_alpha_block(
         }
 
         // store in 3 bytes
-        let mut tmp = [0u8; 3];
+        let mut tmp = &mut buf[2+i*3..5+i*3];
         for j in 0..tmp.len() {
             tmp[j] = ((value >> 8*j) & 0xff) as u8;
         }
-        block.extend_from_slice(&tmp);
     }
+    block.clone_from_slice(&buf);
 }
 
 fn write_alpha_block5(
     alpha0: u8,
     alpha1: u8,
     indices: &[u8; 16],
-    block: &mut Vec<u8>
+    block: &mut [u8]
 ) {
     if alpha0 > alpha1 {
         // invert indices
@@ -180,7 +183,7 @@ fn write_alpha_block7(
     alpha0: u8,
     alpha1: u8,
     indices: &[u8; 16],
-    block: &mut Vec<u8>
+    block: &mut [u8]
 ) {
     if alpha0 < alpha1 {
         // invert indices
@@ -204,7 +207,7 @@ fn write_alpha_block7(
 pub fn compress_alpha_dxt5(
     rgba: &[[u8; 4]; 16],
     mask: u32,
-    block: &mut Vec<u8>
+    block: &mut [u8]
 ) {
     // get range for 5-alpha and 7-alpha interpolation
     let mut min5 = 255u8;

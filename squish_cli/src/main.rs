@@ -80,9 +80,9 @@ fn main() {
         _ => panic!("Unrecognized image format. Supported formats are PNG and JPEG"),
     };
 
-    let mut buf: Vec<u8> = Vec::with_capacity(
-        squish::compute_compressed_size(image.width, image.height, format)
-    );
+    let mut buf = vec![
+        0u8; squish::compute_compressed_size(image.width, image.height, format)
+    ];
     squish::compress(
         &image.data[..],
         image.width,

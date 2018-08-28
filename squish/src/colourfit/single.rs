@@ -28,7 +28,7 @@ use ::colourblock::*;
 use ::colourset::ColourSet;
 use ::math::Vec3;
 
-use super::ColourFit;
+use super::ColourFitImpl;
 use super::single_lut::*;
 
 pub struct SingleColourFit<'a> {    
@@ -39,7 +39,7 @@ pub struct SingleColourFit<'a> {
     index: u8,
     error: u32,
     best_error: u32,
-    best_compressed: Vec<u8>,
+    best_compressed: [u8; 8],
 }
 
 impl<'a> SingleColourFit<'a> {
@@ -52,7 +52,7 @@ impl<'a> SingleColourFit<'a> {
             index: 0,
             error: u32::MAX,
             best_error: u32::MAX,
-            best_compressed: Vec::with_capacity(16),
+            best_compressed: [0u8; 8],
         }
     }
 
@@ -113,6 +113,21 @@ impl<'a> SingleColourFit<'a> {
             }
         }
     }
+}
+
+impl<'a> ColourFitImpl<'a> for SingleColourFit<'a> {
+    fn is_dxt1(&self) -> bool {
+        self.format == Format::Dxt1
+    }
+
+    fn is_transparent(&self) -> bool {
+        self.colourset.is_transparent()
+    }
+
+    fn best_compressed(&'a self) -> &'a [u8] {
+        &self.best_compressed
+    }
+
 
     fn compress3(&mut self) {
         // build lookup table
@@ -132,7 +147,6 @@ impl<'a> SingleColourFit<'a> {
             self.colourset.remap_indices(&[self.index; 16], &mut indices);
 
             // build the compressed blob
-            self.best_compressed.clear();
             write_colour_block3(
                 &self.start,
                 &self.end,
@@ -163,7 +177,6 @@ impl<'a> SingleColourFit<'a> {
             self.colourset.remap_indices(&[self.index; 16], &mut indices);
 
             // build the compressed blob
-            self.best_compressed.clear();
             write_colour_block4(
                 &self.start,
                 &self.end,
@@ -174,27 +187,5 @@ impl<'a> SingleColourFit<'a> {
             // save the error
             self.best_error = self.error;
         }
-    }
-
-    fn write(&self, block: &mut Vec<u8>) {
-        block.extend_from_slice(&self.best_compressed);
-    }
-}
-
-impl<'a> ColourFit for SingleColourFit<'a> {
-    fn compress(
-        &mut self,
-        block: &mut Vec<u8>
-    ) {
-        if self.is_dxt1() {
-            self.compress3();
-            if !self.is_transparent() {
-                self.compress4();
-            }
-        } else {
-            self.compress4();
-        }
-
-        block.extend_from_slice(&self.best_compressed);
     }
 }

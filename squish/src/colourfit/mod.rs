@@ -31,6 +31,32 @@ pub use self::cluster::ClusterFit;
 pub use self::range::RangeFit;
 pub use self::single::SingleColourFit;
 
-pub trait ColourFit {
-    fn compress(&mut self, block: &mut Vec<u8>);
+pub trait ColourFit<'a> {
+    fn compress(&'a mut self, block: &mut [u8]);
+}
+
+trait ColourFitImpl<'a> {
+    fn is_dxt1(&self) -> bool;
+    fn is_transparent(&self) -> bool;
+    fn compress3(&mut self);
+    fn compress4(&mut self);
+    fn best_compressed(&'a self) -> &'a [u8];
+}
+
+impl<'a, T> ColourFit<'a> for T where T: ColourFitImpl<'a> {
+    fn compress(
+        &'a mut self,
+        block: &mut [u8]
+    ) {
+        if self.is_dxt1() {
+            self.compress3();
+            if !self.is_transparent() {
+                self.compress4();
+            }
+        } else {
+            self.compress4();
+        }
+
+        block.clone_from_slice(self.best_compressed());
+    }
 }

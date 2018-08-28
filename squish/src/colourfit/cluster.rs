@@ -29,7 +29,7 @@ use ::colourblock::*;
 use ::colourset::ColourSet;
 use ::math::{Sym3x3, Vec3, Vec4};
 
-use super::ColourFit;
+use super::ColourFitImpl;
 
 
 const MAX_ITERATIONS: usize = 8;
@@ -44,7 +44,7 @@ pub struct ClusterFit<'a> {
     points_weights: [Vec4; 16],
     xsum_wsum: Vec4,
     best_error: Vec4,
-    best_compressed: Vec<u8>,
+    best_compressed: [u8; 8],
 }
 
 impl<'a> ClusterFit<'a> {
@@ -64,7 +64,7 @@ impl<'a> ClusterFit<'a> {
             points_weights: [Vec4::new(0.0, 0.0, 0.0, 0.0); 16],
             xsum_wsum: Vec4::new(0.0, 0.0, 0.0, 0.0),
             best_error: Vec4::new(f32::MAX,f32::MAX,f32::MAX,f32::MAX),
-            best_compressed: Vec::with_capacity(16),
+            best_compressed: [0u8; 8],
         };
 
         // get the covariance matrix
@@ -77,14 +77,6 @@ impl<'a> ClusterFit<'a> {
         fit.principle = covariance.principle_component();
 
         fit
-    }
-
-    fn is_dxt1(&self) -> bool {
-        self.format == Format::Dxt1
-    }
-
-    fn is_transparent(&self) -> bool {
-        self.colourset.is_transparent()
     }
 
     fn construct_ordering(&mut self, axis: &Vec3, iteration: usize) -> bool {
@@ -153,6 +145,20 @@ impl<'a> ClusterFit<'a> {
         }
 
         true
+    }
+}
+
+impl<'a> ColourFitImpl<'a> for ClusterFit<'a> {
+    fn is_dxt1(&self) -> bool {
+        self.format == Format::Dxt1
+    }
+
+    fn is_transparent(&self) -> bool {
+        self.colourset.is_transparent()
+    }
+
+    fn best_compressed(&'a self) -> &'a [u8] {
+        &self.best_compressed
     }
 
     fn compress3(&mut self) {
@@ -296,7 +302,6 @@ impl<'a> ClusterFit<'a> {
             // generate the compressed blob
             let a = best_start.to_vec3();
             let b = best_end.to_vec3();
-            self.best_compressed.clear();
             write_colour_block3(&a, &b, &best_indices, &mut self.best_compressed);
 
             // save the error
@@ -477,29 +482,10 @@ impl<'a> ClusterFit<'a> {
             // generate the compressed blob
             let a = best_start.to_vec3();
             let b = best_end.to_vec3();
-            self.best_compressed.clear();
             write_colour_block4(&a, &b, &best_indices, &mut self.best_compressed);
 
             // save the error
             self.best_error = best_error;
         }
-    }
-}
-
-impl<'a> ColourFit for ClusterFit<'a> {
-    fn compress(
-        &mut self,
-        block: &mut Vec<u8>
-    ) {
-        if self.is_dxt1() {
-            self.compress3();
-            if !self.is_transparent() {
-                self.compress4();
-            }
-        } else {
-            self.compress4();
-        }
-
-        block.extend_from_slice(&self.best_compressed);
     }
 }
