@@ -38,34 +38,24 @@ pub fn read(path: PathBuf) -> RawImage {
         panic!("Only images with 8 bits per channel are supported");
     }
 
-    let channels = match info.color_type {
-        ColorType::Grayscale => 1,
-        ColorType::GrayscaleAlpha => 2,
-        ColorType::RGB => 3,
-        ColorType::RGBA => 4,
-        ColorType::Indexed => {
-            panic!("Image should be de-indexed already");
-        }
-    };
-
     // Preallocate the output buffer.
     let mut buf = vec![0; info.buffer_size()];
 
     // Read the next frame. Currently this function should only called once.
     reader.next_frame(&mut buf).unwrap();
 
-    // duck tape missing channels in
-    buf = match channels {
-        1 => buf[..].iter()
-            .flat_map(|&r| vec![r, 0, 0, 255])
+    // expand to rgba
+    buf = match info.color_type {
+        ColorType::Grayscale => buf[..].iter()
+            .flat_map(|&r| vec![r, r, r, 255])
             .collect::<Vec<u8>>(),
-        2 => buf[..].chunks(2)
-            .flat_map(|rg| vec![rg[0], rg[1], 0, 255])
+        ColorType::GrayscaleAlpha => buf[..].chunks(2)
+            .flat_map(|rg| vec![rg[0], rg[0], rg[0], rg[1]])
             .collect::<Vec<u8>>(),
-        3 => buf[..].chunks(3)
+        ColorType::RGB => buf[..].chunks(3)
             .flat_map(|rgb| vec![rgb[0], rgb[1], rgb[2], 255])
             .collect::<Vec<u8>>(),
-        4 => buf,
+        ColorType::RGBA => buf,
         _ => unreachable!()
     };
 

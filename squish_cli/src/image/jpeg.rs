@@ -34,14 +34,17 @@ pub fn read(path: PathBuf) -> RawImage {
 
     // Decode the image
     let info = decoder.info().unwrap();
-    if info.pixel_format != PixelFormat::RGB24 {
-        panic!("Only JPEG files in RGB format are supported!");
-    }
 
     let mut buf = decoder.decode().unwrap();
-    buf = buf[..].chunks(3)
+    buf = match info.pixel_format {
+        PixelFormat::L8 => buf[..].iter()
+            .flat_map(|&l| vec![l, l, l, 255u8])
+            .collect::<Vec<u8>>(),
+        PixelFormat::RGB24 => buf[..].chunks(3)
             .flat_map(|rgb| vec![rgb[0], rgb[1], rgb[2], 255u8])
-            .collect::<Vec<u8>>();
+            .collect::<Vec<u8>>(),
+        PixelFormat::CMYK32 => panic!("CMYK images are not supported!"),
+    };
 
     RawImage {
         width: info.width as usize,
