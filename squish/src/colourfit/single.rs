@@ -195,6 +195,6 @@ impl<'a> ColourFit for SingleColourFit<'a> {
             self.compress4();
         }
 
-        self.write(block);
+        block.extend_from_slice(&self.best_compressed);
     }
 }

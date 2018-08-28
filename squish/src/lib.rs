@@ -36,7 +36,7 @@ mod colourset;
 mod math;
 
 use alpha::*;
-use colourfit::{ColourFit, SingleColourFit};
+use colourfit::{ColourFit, RangeFit, SingleColourFit};
 use colourset::ColourSet;
 
 /// Defines a compression format
@@ -72,18 +72,20 @@ impl FromStr for Format {
 }
 
 /// Defines a compression algorithm
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub enum CompressionAlgorithm {
     /// Fast, low quality
-    ColourRangeFit,
+    RangeFit,
 
-    /// Very slow, very high quality (default with 1 iteration)
-    ColourClusterFit{max_iterations: usize},
+    /// Slow, high quality, can achieve even higher quality at the expense
+    /// of longer computation time (default with 1 iteration)
+    ClusterFit{max_iterations: usize},
 }
 
 impl Default for CompressionAlgorithm {
     fn default() -> Self {
-        CompressionAlgorithm::ColourClusterFit{max_iterations: 1}
+        //CompressionAlgorithm::ClusterFit{max_iterations: 1}
+        CompressionAlgorithm::RangeFit
     }
 }
 
@@ -118,7 +120,7 @@ impl Default for CompressorParams {
     fn default() -> Self {
         CompressorParams {
             algorithm: CompressionAlgorithm::default(),
-            weights: ColourWeights::default(),
+            weights: COLOUR_WEIGHTS_PERCEPTUAL,
             weigh_colour_by_alpha: false,
         }
     }
@@ -201,7 +203,7 @@ fn compress_block_masked(
     );
 
     // compress with appropriate compression algorithm
-    //if (colours.count() == 1) {
+    if colours.count() == 1 {
         // single colour fit can't handle fully transparent blocks,
         // hence the set has to contain at least 1 colour
         let mut fit = SingleColourFit::new(
@@ -209,19 +211,20 @@ fn compress_block_masked(
             format
         );
         fit.compress(output);
-    //} else if (params.algorithm == Algo::RangeFit) || (colours.count() == 0) {
-    //    let mut fit = RangeFit::new(
-    //        &colours,
-    //        format
-    //    );
-    //    fit.compress(output);
-    //} else {
+    } else if (params.algorithm == Algo::RangeFit) || (colours.count() == 0) {
+        let mut fit = RangeFit::new(
+            &colours,
+            format,
+            params.weights
+        );
+        fit.compress(output);
+    } else {
     //    let mut fit = ClusterFit::new(
     //        &colours,
     //        format
     //    );
     //    fit.compress(output);
-    //}
+    }
 }
 
 /// Decompresses a 4x4 block of pixels

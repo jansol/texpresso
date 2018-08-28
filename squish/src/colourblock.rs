@@ -46,8 +46,8 @@ fn write_block(
     block: &mut Vec<u8>
 ) {
     // write endpoints
-    block.write_u16::<LittleEndian>(a);
-    block.write_u16::<LittleEndian>(b);
+    block.write_u16::<LittleEndian>(a).unwrap();
+    block.write_u16::<LittleEndian>(b).unwrap();
 
     // write 2-bit LUT indices
     let mut packed = [0u8; 4];

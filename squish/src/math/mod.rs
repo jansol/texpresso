@@ -35,11 +35,11 @@ pub struct Sym3x3 {
 }
 
 impl Sym3x3 {
-    fn new(s: f32) -> Self {
+    pub fn new(s: f32) -> Self {
         Self { x: [s, s, s, s, s, s] }
     }
 
-    fn weighted_covariance(points: &[Vec3], weights: &[f32] ) -> Self {
+    pub fn weighted_covariance(points: &[Vec3], weights: &[f32] ) -> Self {
         assert!(points.len() == weights.len());
         
         // compute the centroid
@@ -71,7 +71,7 @@ impl Sym3x3 {
         covariance
     }
 
-    fn principle_component(&self) -> Vec3 {
+    pub fn principle_component(&self) -> Vec3 {
         const POWER_ITERATION_COUNT: usize = 8;
 
         let row0 = Vec4::new(self.x[0], self.x[1], self.x[2], 0.0);

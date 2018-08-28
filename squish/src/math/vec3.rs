@@ -72,6 +72,14 @@ impl Vec3 {
             self.z.min(other.z)
         )
     }
+
+    pub fn truncate(&self) -> Vec3 {
+        Vec3::new(
+            self.x.trunc(),
+            self.y.trunc(),
+            self.z.trunc()
+        )
+    }
 }
 
 impl<'a> Add for &'a Vec3 {

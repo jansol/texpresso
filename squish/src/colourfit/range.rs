@@ -21,6 +21,194 @@
 // SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-pub struct RangeFit {
+use std::f32;
 
+use ::{ColourWeights, Format};
+use ::colourblock::*;
+use ::colourset::ColourSet;
+use ::math::{Sym3x3, Vec3};
+
+use super::ColourFit;
+
+pub struct RangeFit<'a> {
+    colourset: &'a ColourSet,
+    format: Format,
+    weights: Vec3,
+    start: Vec3,
+    end: Vec3,
+    indices: [u8; 16],
+    best_error: f32,
+    best_compressed: Vec<u8>,
+}
+
+impl<'a> RangeFit<'a> {
+    pub fn new(colourset: &'a ColourSet, format: Format, weights: ColourWeights) -> Self {
+        let mut fit = RangeFit {
+            colourset,
+            format,
+            weights: Vec3::new(weights[0], weights[1], weights[2]),
+            start: Vec3::new(0.0, 0.0, 0.0),
+            end: Vec3::new(0.0, 0.0, 0.0),
+            indices: [0u8; 16],
+            best_error: f32::MAX,
+            best_compressed: Vec::with_capacity(16),
+        };
+
+        // cache some values
+        let values = fit.colourset.points();
+        let weights = fit.colourset.weights();
+        let count = fit.colourset.count();
+
+        // get the covariance matrix
+        let covariance = Sym3x3::weighted_covariance(values, weights);
+
+        // get the principle component
+        let principle = covariance.principle_component();
+
+        let mut start = Vec3::new(0.0, 0.0, 0.0);
+        let mut end = Vec3::new(0.0, 0.0, 0.0);
+        if count > 0 {
+            // compute the range
+            start = values[0];
+            end = start;
+            let mut min = start.dot(&principle);
+            let mut max = min;
+            for i in 1..count {
+                let val = values[i].dot(&principle);
+                if val < min {
+                    start = values[i];
+                    min = val;
+                } else if val > max {
+                    end = values[i];
+                    max = val;
+                }
+            }
+        }
+
+        // clamp the output to [0, 1]
+        let one = Vec3::new(1.0, 1.0, 1.0);
+        let zero = Vec3::new(0.0, 0.0, 0.0);
+        start = one.min(zero.max(start));
+        end = one.min(zero.max(end));
+
+        // clamp to the grid and save
+        let grid = Vec3::new(31.0, 63.0, 31.0);
+        let gridrcp = Vec3::new(1.0/31.0, 1.0/63.0, 1.0/31.0);
+        let half = Vec3::new(0.5, 0.5, 0.5);
+        fit.start = (grid*start + half).truncate() * gridrcp;
+        fit.end = (grid*end + half).truncate() * gridrcp;
+
+        fit
+    }
+
+    fn is_dxt1(&self) -> bool {
+        self.format == Format::Dxt1
+    }
+
+    fn is_transparent(&self) -> bool {
+        self.colourset.is_transparent()
+    }
+
+    fn compression_helper(&mut self, codes: &[Vec3]) -> bool {
+        // cache some values
+        let count = self.colourset.count();
+        let values = self.colourset.points();
+
+        // match each point to the closest code
+        let mut closest = [0u8; 16];
+        let mut error = 0f32;
+        for i in 0..count {
+            // find the closest code
+            let mut dist = f32::MAX;
+            let mut idx = 0;
+
+            for j in 0..codes.len() {
+                let d = (self.weights * (values[i] - codes[j])).length2();
+                if d < dist {
+                    dist = d;
+                    idx = j;
+                }
+            }
+
+            // save the index
+            closest[i] = idx as u8;
+
+            // accumulate the error
+            error += dist;
+        }
+
+        // save this scheme if it wins
+        if error < self.best_error {
+            // remap the indices
+            self.colourset.remap_indices(&closest, &mut self.indices);
+
+            // save the error
+            self.best_error = error;
+
+            return true;
+        }
+
+        false
+    }
+
+    fn compress3(&mut self) {
+        // create a codebook
+        let codes = [
+            self.start,
+            self.end,
+            self.start*0.5 + self.end*0.5,
+        ];
+
+        if self.compression_helper(&codes) {
+            // build the best compressed blob
+            self.best_compressed.clear();
+            write_colour_block3(
+                &self.start,
+                &self.end,
+                &self.indices,
+                &mut self.best_compressed
+            );
+        }
+    }
+
+    fn compress4(&mut self) {
+        // create a codebook
+        let codes = [
+            self.start,
+            self.end,
+            self.start*(2.0/3.0) + self.end*(1.0/3.0),
+            self.start*(1.0/3.0) + self.end*(2.0/3.0),
+        ];
+
+        if self.compression_helper(&codes) {
+            // build the best compressed blob
+            self.best_compressed.clear();
+            write_colour_block4(
+                &self.start,
+                &self.end,
+                &self.indices,
+                &mut self.best_compressed
+            );
+        }
+    }
+}
+
+
+
+impl<'a> ColourFit for RangeFit<'a> {
+    fn compress(
+        &mut self,
+        block: &mut Vec<u8>
+    ) {
+        if self.is_dxt1() {
+            self.compress3();
+            if !self.is_transparent() {
+                self.compress4();
+            }
+        } else {
+            self.compress4();
+        }
+
+        block.extend_from_slice(&self.best_compressed);
+    }
 }

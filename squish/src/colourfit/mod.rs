@@ -22,14 +22,14 @@
 
 
 //mod cluster;
-//mod range;
+mod range;
 mod single;
 mod single_lut;
 
 
-pub use self::single::SingleColourFit;
 //pub use self::cluster::ClusterFit;
-//pub use self::range::RangeFit;
+pub use self::range::RangeFit;
+pub use self::single::SingleColourFit;
 
 pub trait ColourFit {
     fn compress(&mut self, block: &mut Vec<u8>);
