@@ -253,10 +253,10 @@ pub fn compress(
     params: CompressorParams,
     output: &mut Vec<u8>
 ) {
-    // loop over blocks
-    for y in 0..height/4 {
+    // loop over blocks, rounding size to next multiple of 4
+    for y in 0..(height+3)/4 {
         let y = 4*y;
-        for x in 0..width/4 {
+        for x in 0..(width+3)/4 {
             let x = 4*x;
 
             // build the 4x4 block of pixels
