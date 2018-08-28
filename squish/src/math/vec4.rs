@@ -25,6 +25,7 @@ use std::ops::{Add, AddAssign, Mul, MulAssign, Sub, SubAssign};
 
 use super::Vec3;
 
+#[derive(Copy, Clone, PartialEq)]
 pub struct Vec4 {
     x: f32,
     y: f32,
@@ -73,6 +74,24 @@ impl Vec4 {
         Vec4::new(self.w, self.w, self.w, self.w)
     }
 
+    pub fn max(&self, other: Vec4) -> Vec4 {
+        Vec4::new(
+            self.x.max(other.x),
+            self.y.max(other.y),
+            self.z.max(other.z),
+            self.w.max(other.w)
+        )
+    }
+
+    pub fn min(&self, other: Vec4) -> Vec4 {
+        Vec4::new(
+            self.x.min(other.x),
+            self.y.min(other.y),
+            self.z.min(other.z),
+            self.w.min(other.w)
+        )
+    }
+
     pub fn reciprocal(&self) -> Vec4 {
         Vec4::new(1.0/self.x, 1.0/self.y, 1.0/self.z, 1.0/self.w)
     }
@@ -85,11 +104,11 @@ impl Vec4 {
         Vec4::new(self.x.trunc(), self.y.trunc(), self.z.trunc(), self.w.trunc())
     }
 
-    pub fn multiply_add<'a>(a: &'a Vec4, b: &'a Vec4, c: &'a Vec4) -> Vec4 {
+    pub fn multiply_add(a: Vec4, b: Vec4, c: Vec4) -> Vec4 {
         a * b + c
     }
     
-    pub fn negative_multiply_subtract<'a>(a: &'a Vec4, b: &'a Vec4, c: &'a Vec4) -> Vec4 {
+    pub fn negative_multiply_subtract(a: Vec4, b: Vec4, c: Vec4) -> Vec4 {
         c - a * b
     }
 }

@@ -82,8 +82,8 @@ impl Sym3x3 {
         for _ in 0..POWER_ITERATION_COUNT {
             // matrix multiplication
             let w = &row0 * v.splat_x();
-            let w = Vec4::multiply_add(&row1, &v.splat_y(), &w);
-            let w = Vec4::multiply_add(&row2, &v.splat_z(), &w);
+            let w = Vec4::multiply_add(row1, v.splat_y(), w);
+            let w = Vec4::multiply_add(row2, v.splat_z(), w);
 
             // Construct Vec4 with max component from xyz in all channels
             let a = w.x().max(w.y().max(w.z()));

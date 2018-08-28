@@ -21,13 +21,13 @@
 // SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-//mod cluster;
+mod cluster;
 mod range;
 mod single;
 mod single_lut;
 
 
-//pub use self::cluster::ClusterFit;
+pub use self::cluster::ClusterFit;
 pub use self::range::RangeFit;
 pub use self::single::SingleColourFit;
 

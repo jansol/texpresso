@@ -36,7 +36,7 @@ mod colourset;
 mod math;
 
 use alpha::*;
-use colourfit::{ColourFit, RangeFit, SingleColourFit};
+use colourfit::{ClusterFit, ColourFit, RangeFit, SingleColourFit};
 use colourset::ColourSet;
 
 /// Defines a compression format
@@ -77,15 +77,16 @@ pub enum CompressionAlgorithm {
     /// Fast, low quality
     RangeFit,
 
-    /// Slow, high quality, can achieve even higher quality at the expense
-    /// of longer computation time (default with 1 iteration)
-    ClusterFit{max_iterations: usize},
+    /// Slow, high quality
+    ClusterFit,
+
+    /// Very slow, very high quality
+    IterativeClusterFit,
 }
 
 impl Default for CompressionAlgorithm {
     fn default() -> Self {
-        //CompressionAlgorithm::ClusterFit{max_iterations: 1}
-        CompressionAlgorithm::RangeFit
+        CompressionAlgorithm::ClusterFit
     }
 }
 
@@ -204,26 +205,23 @@ fn compress_block_masked(
 
     // compress with appropriate compression algorithm
     if colours.count() == 1 {
-        // single colour fit can't handle fully transparent blocks,
-        // hence the set has to contain at least 1 colour
-        let mut fit = SingleColourFit::new(
-            &colours,
-            format
-        );
+        // Single colour fit can't handle fully transparent blocks, hence the
+        // set has to contain at least 1 colour. It's also not very useful for
+        // anything more complex so we only use it for blocks of uniform colour.
+        let mut fit = SingleColourFit::new(&colours, format);
         fit.compress(output);
     } else if (params.algorithm == Algo::RangeFit) || (colours.count() == 0) {
-        let mut fit = RangeFit::new(
-            &colours,
-            format,
-            params.weights
-        );
+        let mut fit = RangeFit::new(&colours, format, params.weights);
         fit.compress(output);
     } else {
-    //    let mut fit = ClusterFit::new(
-    //        &colours,
-    //        format
-    //    );
-    //    fit.compress(output);
+        let iterate = params.algorithm == Algo::IterativeClusterFit;
+        let mut fit = ClusterFit::new(
+            &colours,
+            format,
+            params.weights,
+            iterate
+        );
+        fit.compress(output);
     }
 }
 
