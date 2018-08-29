@@ -103,14 +103,6 @@ impl Vec4 {
     pub fn truncate(&self) -> Vec4 {
         Vec4::new(self.x.trunc(), self.y.trunc(), self.z.trunc(), self.w.trunc())
     }
-
-    pub fn multiply_add(a: Vec4, b: Vec4, c: Vec4) -> Vec4 {
-        a * b + c
-    }
-    
-    pub fn negative_multiply_subtract(a: Vec4, b: Vec4, c: Vec4) -> Vec4 {
-        c - a * b
-    }
 }
 
 impl Add for Vec4 {

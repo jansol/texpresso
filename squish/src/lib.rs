@@ -33,7 +33,6 @@ use core::str::FromStr;
 use core::fmt;
 
 mod alpha;
-mod colourblock;
 mod colourfit;
 mod colourset;
 mod math;
@@ -89,7 +88,7 @@ pub enum Algorithm {
 
 impl Default for Algorithm {
     fn default() -> Self {
-        Algorithm::ClusterFit
+        Algorithm::RangeFit
     }
 }
 
@@ -128,174 +127,169 @@ impl Default for Params {
     }
 }
 
-/// Decompresses an image in memory
-///
-/// * `data`   - The compressed image data
-/// * `width`  - The width of the source image
-/// * `height` - The height of the source image
-/// * `format` - The compression format
-pub fn decompress(
-    data: &[u8],
-    width: usize,
-    height: usize,
-    format: Format,
-    output: &mut [u8]
-) {
+impl Format {
+    /// Decompresses an image in memory
+    ///
+    /// * `data`   - The compressed image data
+    /// * `width`  - The width of the source image
+    /// * `height` - The height of the source image
+    /// * `output` - Space to store the decompressed image
+    pub fn decompress(
+        self,
+        data: &[u8],
+        width: usize,
+        height: usize,
+        output: &mut [u8]
+    ) {
 
-}
-
-/// Returns how many bytes a 4x4 block of pixels will take after compression,
-/// given the compression format
-fn bytes_per_block(format: Format) -> usize {
-    // Compressed block size in bytes
-    match format {
-        Format::Dxt1 => 8,
-        Format::Dxt3 => 16,
-        Format::Dxt5 => 16,
-    } 
-}
-
-/// Computes the amount of space in bytes needed for the compressed image
-///
-/// * `width`  - Width of the uncompressed image
-/// * `height` - Height of the uncompressed image
-/// * `format` - The desired compression format
-///
-pub fn compute_compressed_size(
-    width: usize,
-    height: usize,
-    format: Format
-) -> usize {
-    // Number of blocks required for image of given dimensions
-    let n_blocks = ((width + 3) / 4) * ((height + 3) / 4);
-
-    let blocksize = bytes_per_block(format);
-
-    n_blocks * blocksize
-}
-
-/// Compresses a 4x4 block of pixels, masking out some pixels e.g. for padding the
-/// image to a multiple of the block size.
-///
-/// * `rgba`   - The uncompressed block of pixels
-/// * `mask`   - The valid pixel mask
-/// * `format` - The desired compression format
-/// * `params` - Additional compressor parameters
-fn compress_block_masked(
-    rgba: [[u8; 4]; 16],
-    mask: u32,
-    format: Format,
-    params: Params,
-    output: &mut [u8]
-) {
-    use Algorithm as Algo;
-
-    // compress alpha separately if necessary
-    if format == Format::Dxt3 {
-        compress_alpha_dxt3(&rgba, mask, &mut output[..8]);
-    } else if format == Format::Dxt5 {
-        compress_alpha_dxt5(&rgba, mask, &mut output[..8]);
     }
 
-    // create the minimal point set
-    let colours = ColourSet::new(
-        &rgba,
-        mask, 
-        format,
-        params.weigh_colour_by_alpha
-    );
+    /// Returns how many bytes a 4x4 block of pixels will compress into
+    fn block_size(self) -> usize {
+        // Compressed block size in bytes
+        match self {
+            Format::Dxt1 => 8,
+            Format::Dxt3 => 16,
+            Format::Dxt5 => 16,
+        }
+    }
 
-    let colour_offset = if format == Format::Dxt1 { 0 } else { 8 };
-    let colour_block = &mut output[colour_offset..colour_offset+8];
+    /// Computes the amount of space in bytes needed for an image of given size,
+    /// accounting for padding to a multiple of 4x4 pixels
+    ///
+    /// * `width`  - Width of the uncompressed image
+    /// * `height` - Height of the uncompressed image
+    pub fn compressed_size(
+        self,
+        width: usize,
+        height: usize
+    ) -> usize {
+        // Number of blocks required for image of given dimensions
+        let n_blocks = ((width + 3) / 4) * ((height + 3) / 4);
 
-    // compress with appropriate compression algorithm
-    if colours.count() == 1 {
-        // Single colour fit can't handle fully transparent blocks, hence the
-        // set has to contain at least 1 colour. It's also not very useful for
-        // anything more complex so we only use it for blocks of uniform colour.
-        let mut fit = SingleColourFit::new(&colours, format);
-        fit.compress(colour_block);
-    } else if (params.algorithm == Algo::RangeFit) || (colours.count() == 0) {
-        let mut fit = RangeFit::new(&colours, format, params.weights);
-        fit.compress(colour_block);
-    } else {
-        let iterate = params.algorithm == Algo::IterativeClusterFit;
-        let mut fit = ClusterFit::new(
-            &colours,
-            format,
-            params.weights,
-            iterate
+        n_blocks * self.block_size()
+    }
+
+    /// Compresses a 4x4 block of pixels, masking out some pixels e.g. for padding the
+    /// image to a multiple of the block size.
+    ///
+    /// * `rgba`   - The uncompressed block of pixels
+    /// * `mask`   - The valid pixel mask
+    /// * `params` - Additional compressor parameters
+    /// * `output` - Storage for the compressed block
+    fn compress_block_masked(
+        self,
+        rgba: [[u8; 4]; 16],
+        mask: u32,
+        params: Params,
+        output: &mut [u8]
+    ) {
+        // compress alpha separately if necessary
+        if self == Format::Dxt3 {
+            compress_alpha_dxt3(&rgba, mask, &mut output[..8]);
+        } else if self == Format::Dxt5 {
+            compress_alpha_dxt5(&rgba, mask, &mut output[..8]);
+        }
+
+        // create the minimal point set
+        let colours = ColourSet::new(
+            &rgba,
+            mask,
+            self,
+            params.weigh_colour_by_alpha
         );
-        fit.compress(colour_block);
+
+        let colour_offset = if self == Format::Dxt1 { 0 } else { 8 };
+        let colour_block = &mut output[colour_offset..colour_offset+8];
+
+        // compress with appropriate compression algorithm
+        if colours.count() == 1 {
+            // Single colour fit can't handle fully transparent blocks, hence the
+            // set has to contain at least 1 colour. It's also not very useful for
+            // anything more complex so we only use it for blocks of uniform colour.
+            let mut fit = SingleColourFit::new(&colours, self);
+            fit.compress(colour_block);
+        } else if (params.algorithm == Algorithm::RangeFit) || (colours.count() == 0) {
+            let mut fit = RangeFit::new(&colours, self, params.weights);
+            fit.compress(colour_block);
+        } else {
+            let iterate = params.algorithm == Algorithm::IterativeClusterFit;
+            let mut fit = ClusterFit::new(
+                &colours,
+                self,
+                params.weights,
+                iterate
+            );
+            fit.compress(colour_block);
+        }
     }
-}
 
-/// Decompresses a 4x4 block of pixels
-///
-/// * `rgba`   - The compressed block of pixels
-/// * `format` - The compression format of the data
-fn decompress_block(
-    rgba: &[u8],
-    format: Format,
-) -> () {
+    /// Decompresses a 4x4 block of pixels
+    ///
+    /// * `rgba`   - The compressed block of pixels
+    /// * `output` - Storage for the decompressed block of pixels
+    fn decompress_block(
+        self,
+        rgba: &[u8]
+    ) -> () {
 
-}
+    }
 
-/// Compresses an image in memory
-///
-/// * `rgba`   - The uncompressed pixel data
-/// * `width`  - The width of the source image
-/// * `height` - The height of the source image
-/// * `format` - The desired compression format
-/// * `params` - Additional compressor parameters
-/// * `output` - Output buffer for the compressed image. Ensure that this has
-/// at least as much space available as `compute_compressed_size` suggests.
-pub fn compress(
-    rgba: &[u8],
-    width: usize,
-    height: usize,
-    format: Format,
-    params: Params,
-    output: &mut [u8]
-) {
-    assert!(output.len() >= compute_compressed_size(width, height, format));
+    /// Compresses an image in memory
+    ///
+    /// * `rgba`   - The uncompressed pixel data
+    /// * `width`  - The width of the source image
+    /// * `height` - The height of the source image
+    /// * `params` - Additional compressor parameters
+    /// * `output` - Output buffer for the compressed image. Ensure that this has
+    /// at least as much space available as `compute_compressed_size` suggests.
+    pub fn compress(
+        self,
+        rgba: &[u8],
+        width: usize,
+        height: usize,
+        params: Params,
+        output: &mut [u8]
+    ) {
+        assert!(output.len() >= self.compressed_size(width, height));
 
-    let block_size = bytes_per_block(format);
-    let blocks_per_col = (height+3)/4;
-    let blocks_per_row = (width+3)/4;
+        let block_size = self.block_size();
+        let blocks_per_col = (height+3)/4;
+        let blocks_per_row = (width+3)/4;
 
-    // loop over blocks, rounding size to next multiple of 4
-    for y in 0..blocks_per_col {
-        for x in 0..blocks_per_row {
+        // loop over blocks, rounding size to next multiple of 4
+        for y in 0..blocks_per_col {
+            for x in 0..blocks_per_row {
 
-            // build the 4x4 block of pixels
-            let mut source_rgba = [[0u8; 4]; 16];
-            let mut mask = 0u32;
-            for py in 0..4 {
-                for px in 0..4 {
-                    let index = 4*py + px;
+                // build the 4x4 block of pixels
+                let mut source_rgba = [[0u8; 4]; 16];
+                let mut mask = 0u32;
+                for py in 0..4 {
+                    for px in 0..4 {
+                        let index = 4*py + px;
 
-                    // get position in source image
-                    let sx = 4*x + px;
-                    let sy = 4*y + py;
+                        // get position in source image
+                        let sx = 4*x + px;
+                        let sy = 4*y + py;
 
-                    // enable pixel if within bounds
-                    if sx < width && sy < height {
-                        // copy pixel value
-                        let src_index = 4 * (width*sy + sx);
-                        &mut source_rgba[index]
-                            .copy_from_slice(&rgba[src_index..src_index+4]);
+                        // enable pixel if within bounds
+                        if sx < width && sy < height {
+                            // copy pixel value
+                            let src_index = 4 * (width*sy + sx);
+                            &mut source_rgba[index]
+                                .copy_from_slice(&rgba[src_index..src_index+4]);
 
-                        // enable pixel
-                        mask |= 1 << index;
+                            // enable pixel
+                            mask |= 1 << index;
+                        }
                     }
                 }
-            }
 
-            // compress block into output
-            let offset = x * block_size + y * blocks_per_row * block_size;
-            let block = &mut output[offset..offset+block_size];
-            compress_block_masked(source_rgba, mask, format, params, block);
+                // compress block into output
+                let offset = x * block_size + y * blocks_per_row * block_size;
+                let block = &mut output[offset..offset+block_size];
+                self.compress_block_masked(source_rgba, mask, params, block);
+            }
         }
     }
 }
@@ -315,37 +309,37 @@ mod tests {
 
     #[test]
     fn test_storage_requirements_dxt1_exact() {
-        let estimate = compute_compressed_size(16, 32, Format::Dxt1);
+        let estimate = Format::Dxt1.compressed_size(16, 32);
         assert_eq!(estimate, 256);
     }
 
     #[test]
     fn test_storage_requirements_dxt1_padded() {
-        let estimate = compute_compressed_size(15, 30, Format::Dxt1);
+        let estimate = Format::Dxt1.compressed_size(15, 30);
         assert_eq!(estimate, 256);
     }
 
     #[test]
     fn test_storage_requirements_dxt3_exact() {
-        let estimate = compute_compressed_size(16, 32, Format::Dxt3);
+        let estimate = Format::Dxt3.compressed_size(16, 32);
         assert_eq!(estimate, 512);
     }
 
     #[test]
     fn test_storage_requirements_dxt3_padded() {
-        let estimate = compute_compressed_size(15, 30, Format::Dxt3);
+        let estimate = Format::Dxt3.compressed_size(15, 30);
         assert_eq!(estimate, 512);
     }
 
     #[test]
     fn test_storage_requirements_dxt5_exact() {
-        let estimate = compute_compressed_size(16, 32, Format::Dxt5);
+        let estimate = Format::Dxt5.compressed_size(16, 32);
         assert_eq!(estimate, 512);
     }
 
     #[test]
     fn test_storage_requirements_dxt5_padded() {
-        let estimate = compute_compressed_size(15, 30, Format::Dxt5);
+        let estimate = Format::Dxt5.compressed_size(15, 30);
         assert_eq!(estimate, 512);
     }
 }

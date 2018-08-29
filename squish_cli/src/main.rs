@@ -81,13 +81,12 @@ fn main() {
     };
 
     let mut buf = vec![
-        0u8; squish::compute_compressed_size(image.width, image.height, format)
+        0u8; format.compressed_size(image.width, image.height)
     ];
-    squish::compress(
+    format.compress(
         &image.data[..],
         image.width,
         image.height,
-        format,
         Params::default(),
         &mut buf
     );

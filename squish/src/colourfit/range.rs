@@ -24,10 +24,10 @@
 use core::f32;
 
 use ::{ColourWeights, Format};
-use ::colourblock::*;
 use ::colourset::ColourSet;
 use ::math::{Sym3x3, Vec3};
 
+use super::colourblock::*;
 use super::ColourFitImpl;
 
 pub struct RangeFit<'a> {

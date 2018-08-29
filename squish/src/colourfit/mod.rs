@@ -25,6 +25,7 @@ mod cluster;
 mod range;
 mod single;
 mod single_lut;
+mod colourblock;
 
 
 pub use self::cluster::ClusterFit;
@@ -35,7 +36,7 @@ pub trait ColourFit<'a> {
     fn compress(&'a mut self, block: &mut [u8]);
 }
 
-trait ColourFitImpl<'a> {
+pub trait ColourFitImpl<'a> {
     fn is_dxt1(&self) -> bool;
     fn is_transparent(&self) -> bool;
     fn compress3(&mut self);

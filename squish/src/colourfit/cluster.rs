@@ -25,10 +25,10 @@ use core::f32;
 use core::cmp::Ordering;
 
 use ::{ColourWeights, Format};
-use ::colourblock::*;
 use ::colourset::ColourSet;
 use ::math::{Sym3x3, Vec3, Vec4};
 
+use super::colourblock::*;
 use super::ColourFitImpl;
 
 
@@ -202,50 +202,31 @@ impl<'a> ColourFitImpl<'a> for ClusterFit<'a> {
                     let part2 = self.xsum_wsum - part1 - part0;
 
                     // compute least squares term directly
-                    let alphax_sum = Vec4::multiply_add(part1, half_half2, part0);
+                    let alphax_sum = part1 * half_half2 + part0;
                     let alpha2_sum = alphax_sum.splat_w();
 
-                    let betax_sum = Vec4::multiply_add(part1, half_half2, part2);
+                    let betax_sum = part1 * half_half2 + part2;
                     let beta2_sum = betax_sum.splat_w();
 
                     let alphabeta_sum = (part1*half_half2).splat_w();
 
                     // compute the least-squares optimal points
-                    let factor = Vec4::negative_multiply_subtract(
-                        alphabeta_sum,
-                        alphabeta_sum,
-                        alpha2_sum * beta2_sum
-                    ).reciprocal();
-                    let a = Vec4::negative_multiply_subtract(
-                        betax_sum,
-                        alphabeta_sum,
-                        alphax_sum * beta2_sum
-                    ) * factor;
-                    let b = Vec4::negative_multiply_subtract(
-                        alphax_sum,
-                        alphabeta_sum,
-                        betax_sum*alpha2_sum
-                    ) * factor;
+                    let factor = ((alpha2_sum * beta2_sum) - alphabeta_sum * alphabeta_sum)
+                        .reciprocal();
+                    let a = ((alphax_sum * beta2_sum) - betax_sum * alphabeta_sum) * factor;
+                    let b = ((betax_sum * alpha2_sum) - alphax_sum * alphabeta_sum) * factor;
 
                     // clamp to the grid
                     let a = one.min(zero.max(a));
                     let b = one.min(zero.max(b));
-                    let a = Vec4::multiply_add(grid, a, half).truncate() * gridrcp;
-                    let b = Vec4::multiply_add(grid, b, half).truncate() * gridrcp;
+                    let a = (grid * a + half).truncate() * gridrcp;
+                    let b = (grid * b + half).truncate() * gridrcp;
 
                     // compute the error (we skip the constant xxsum)
-                    let e1 = Vec4::multiply_add(a*a, alpha2_sum, b*b*beta2_sum);
-                    let e2 = Vec4::negative_multiply_subtract(
-                        a,
-                        alphax_sum,
-                        a*b*alphabeta_sum
-                    );
-                    let e3 = Vec4::negative_multiply_subtract(
-                        b,
-                        betax_sum,
-                        e2
-                    );
-                    let e4 = Vec4::multiply_add(two, e3, e1);
+                    let e1 = (a*a) * alpha2_sum + (b*b*beta2_sum);
+                    let e2 = (a*b*alphabeta_sum) - a * alphax_sum;
+                    let e3 = e2 - b * betax_sum;
+                    let e4 = two * e3 + e1;
 
                     // apply the channel weights to the error term
                     let e5 = e4 * self.weights;
@@ -312,7 +293,7 @@ impl<'a> ColourFitImpl<'a> for ClusterFit<'a> {
         let one = Vec4::new(1.0, 1.0, 1.0, 1.0);
         let onethird_onethird2 = Vec4::new(1.0/3.0, 1.0/3.0, 1.0/3.0, 1.0/9.0);
         let twothirds_twothirds2= Vec4::new(2.0/3.0, 2.0/3.0, 2.0/3.0, 4.0/9.0);
-        let twonineths = Vec4::new(2.0/9.0, 2.0/9.0, 2.0/9.0, 2.0/9.0);
+        let twoninths = Vec4::new(2.0/9.0, 2.0/9.0, 2.0/9.0, 2.0/9.0);
         let zero = Vec4::new(0.0, 0.0, 0.0, 0.0);
         let half = Vec4::new(0.5, 0.5, 0.5, 0.5);
         let grid = Vec4::new(31.0, 63.0, 31.0, 0.0);
@@ -357,66 +338,33 @@ impl<'a> ColourFitImpl<'a> for ClusterFit<'a> {
                         let part3 = self.xsum_wsum - part2 - part1 - part0;
 
                         // compute least squares terms directly
-                        let alphax_sum = Vec4::multiply_add(
-                            part2,
-                            onethird_onethird2,
-                            Vec4::multiply_add(
-                                part1,
-                                twothirds_twothirds2,
-                                part0
-                            )
-                        );
+                        let alphax_sum = part2 * onethird_onethird2
+                            + (part1 * twothirds_twothirds2 + part0);
                         let alpha2_sum = alphax_sum.splat_w();
 
-                        let betax_sum = Vec4::multiply_add(
-                            part1,
-                            onethird_onethird2,
-                            Vec4::multiply_add(
-                                part2,
-                                twothirds_twothirds2,
-                                part3
-                            )
-                        );
+                        let betax_sum = part1 * onethird_onethird2
+                            + (part2 * twothirds_twothirds2 + part3);
                         let beta2_sum = betax_sum.splat_w();
 
-                        let alphabeta_sum = twonineths*(part1+part2).splat_w();
+                        let alphabeta_sum = twoninths*(part1+part2).splat_w();
 
                         // compute the least-squares optimal points
-                        let factor = Vec4::negative_multiply_subtract(
-                            alphabeta_sum,
-                            alphabeta_sum,
-                            alpha2_sum * beta2_sum
-                        ).reciprocal();
-                        let a = Vec4::negative_multiply_subtract(
-                            betax_sum,
-                            alphabeta_sum,
-                            alphax_sum * beta2_sum
-                        ) * factor;
-                        let b = Vec4::negative_multiply_subtract(
-                            alphax_sum,
-                            alphabeta_sum,
-                            betax_sum*alpha2_sum
-                        ) * factor;
+                        let factor = ((alpha2_sum * beta2_sum) - alphabeta_sum * alphabeta_sum)
+                            .reciprocal();
+                        let a = ((alphax_sum * beta2_sum) - betax_sum * alphabeta_sum) * factor;
+                        let b = ((betax_sum*alpha2_sum) - alphax_sum * alphabeta_sum) * factor;
 
                         // clamp to the grid
                         let a = one.min(zero.max(a));
                         let b = one.min(zero.max(b));
-                        let a = Vec4::multiply_add(grid, a, half).truncate() * gridrcp;
-                        let b = Vec4::multiply_add(grid, b, half).truncate() * gridrcp;
+                        let a = (grid * a + half).truncate() * gridrcp;
+                        let b = (grid * b + half).truncate() * gridrcp;
 
                         // compute the error (we skip the constant xxsum)
-                        let e1 = Vec4::multiply_add(a*a, alpha2_sum, b*b*beta2_sum);
-                        let e2 = Vec4::negative_multiply_subtract(
-                            a,
-                            alphax_sum,
-                            a*b*alphabeta_sum
-                        );
-                        let e3 = Vec4::negative_multiply_subtract(
-                            b,
-                            betax_sum,
-                            e2
-                        );
-                        let e4 = Vec4::multiply_add(two, e3, e1);
+                        let e1 = (a*a) * alpha2_sum + (b*b*beta2_sum);
+                        let e2 = (a*b*alphabeta_sum) - a * alphax_sum;
+                        let e3 = e2 - b * betax_sum;
+                        let e4 = two * e3 + e1;
 
                         // apply the channel weights to the error term
                         let e5 = e4 * self.weights;

@@ -24,10 +24,10 @@
 use core::u32;
 
 use ::{Format, f32_to_i32_clamped};
-use ::colourblock::*;
 use ::colourset::ColourSet;
 use ::math::Vec3;
 
+use super::colourblock::*;
 use super::ColourFitImpl;
 use super::single_lut::*;
 
