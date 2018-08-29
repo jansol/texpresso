@@ -85,7 +85,7 @@ impl<'a> ClusterFit<'a> {
         let values = self.colourset.points();
 
         // build list of dot products
-        let mut dps = [(0usize, 0f32); 16];
+        let mut dps = [(0usize, f32::MAX); 16];
         for i in 0..count {
             dps[i] = (i, values[i].dot(axis));
         }
