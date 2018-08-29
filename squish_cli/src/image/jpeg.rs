@@ -20,14 +20,14 @@
 // SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-use std::path::PathBuf;
+use std::path::Path;
 use std::fs::File;
 
 use jpeg_decoder::{Decoder, PixelFormat};
 
 use super::RawImage;
 
-pub fn read(path: PathBuf) -> RawImage {
+pub fn read(path: &Path) -> RawImage {
     let file = File::open(path).expect("Failed to open file");
     let mut decoder = Decoder::new(file);
     decoder.read_info().expect("Failed to read JPEG header. Is this really a JPEG file?");

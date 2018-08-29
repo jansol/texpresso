@@ -24,10 +24,10 @@
 use core::u32;
 
 use ::{Format, f32_to_i32_clamped};
+use ::colourblock;
 use ::colourset::ColourSet;
 use ::math::Vec3;
 
-use super::colourblock::*;
 use super::ColourFitImpl;
 use super::single_lut::*;
 
@@ -139,7 +139,7 @@ impl<'a> ColourFitImpl<'a> for SingleColourFit<'a> {
             self.colourset.remap_indices(&[self.index; 16], &mut indices);
 
             // build the compressed blob
-            write_colour_block3(
+            colourblock::write3(
                 &self.start,
                 &self.end,
                 &indices,
@@ -169,7 +169,7 @@ impl<'a> ColourFitImpl<'a> for SingleColourFit<'a> {
             self.colourset.remap_indices(&[self.index; 16], &mut indices);
 
             // build the compressed blob
-            write_colour_block4(
+            colourblock::write4(
                 &self.start,
                 &self.end,
                 &indices,

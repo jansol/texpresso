@@ -33,11 +33,11 @@ use core::str::FromStr;
 use core::fmt;
 
 mod alpha;
+mod colourblock;
 mod colourfit;
 mod colourset;
 mod math;
 
-use alpha::*;
 use colourfit::{ClusterFit, ColourFit, RangeFit, SingleColourFit};
 use colourset::ColourSet;
 
@@ -64,10 +64,11 @@ impl FromStr for Format {
     type Err = ParseFormatError;
 
     fn from_str(s: &str) -> Result<Format, ParseFormatError> {
+        // accept both modern and old (DirectX9) names
         match s.to_lowercase().as_str() {
-            "bc1" => Ok(Format::Bc1),
-            "bc2" => Ok(Format::Bc2),
-            "bc3" => Ok(Format::Bc3),
+            "bc1" | "dxt1" => Ok(Format::Bc1),
+            "bc2" | "dxt3" => Ok(Format::Bc2),
+            "bc3" | "dxt5" => Ok(Format::Bc3),
             _ => Err(ParseFormatError::InvalidFormat)
         }
     }
@@ -127,6 +128,11 @@ impl Default for Params {
     }
 }
 
+/// Returns number of blocks needed for an image of given dimension
+pub fn num_blocks(size: usize) -> usize {
+    (size + 3)/4
+}
+
 impl Format {
     /// Decompresses an image in memory
     ///
@@ -141,7 +147,33 @@ impl Format {
         height: usize,
         output: &mut [u8]
     ) {
+        let blocks_wide = num_blocks(width);
+        let blocks_high = num_blocks(height);
+        let block_size = self.block_size();
 
+        // loop over blocks
+        for y in 0..blocks_high {
+            for x in 0..blocks_wide {
+                // decompress the block
+                let bidx = (x + y*blocks_wide) * block_size;
+                let rgba = self.decompress_block(&data[bidx..bidx+block_size]);
+
+                // write the decompressed pixels to the correct image location
+                for py in 0..4 {
+                    for px in 0..4 {
+                        // get target location
+                        let sx = 4*x + px;
+                        let sy = 4*y + py;
+
+                        if sx < width && sy < height {
+                            for i in 0..4 {
+                                output[4*(sx + sy*width) + i] = rgba[px + py*4][i];
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     /// Returns how many bytes a 4x4 block of pixels will compress into
@@ -165,9 +197,8 @@ impl Format {
         height: usize
     ) -> usize {
         // Number of blocks required for image of given dimensions
-        let n_blocks = ((width + 3) / 4) * ((height + 3) / 4);
-
-        n_blocks * self.block_size()
+        let blocks = num_blocks(width) * num_blocks(height);
+        blocks * self.block_size()
     }
 
     /// Compresses a 4x4 block of pixels, masking out some pixels e.g. for padding the
@@ -186,9 +217,9 @@ impl Format {
     ) {
         // compress alpha separately if necessary
         if self == Format::Bc2 {
-            compress_alpha_bc2(&rgba, mask, &mut output[..8]);
+            alpha::compress_bc2(&rgba, mask, &mut output[..8]);
         } else if self == Format::Bc3 {
-            compress_alpha_bc3(&rgba, mask, &mut output[..8]);
+            alpha::compress_bc3(&rgba, mask, &mut output[..8]);
         }
 
         // create the minimal point set
@@ -226,13 +257,30 @@ impl Format {
 
     /// Decompresses a 4x4 block of pixels
     ///
-    /// * `rgba`   - The compressed block of pixels
+    /// * `block`  - The compressed block of pixels
     /// * `output` - Storage for the decompressed block of pixels
     fn decompress_block(
         self,
-        rgba: &[u8]
-    ) -> () {
+        block: &[u8]
+    )  -> [[u8; 4]; 16]  {
+        // get reference to the actual colour block
+        let colour_offset = if self == Format::Bc1 { 0 } else { 8 };
+        let colour_block = &block[colour_offset..colour_offset+8];
 
+        // decompress colour
+        let mut rgba = colourblock::decompress(
+            colour_block,
+            self == Format::Bc1
+        );
+
+        // decompress alpha separately if necessary
+        if self == Format::Bc2 {
+            alpha::decompress_bc2(&mut rgba, &block[..8]);
+        } else if self == Format::Bc3 {
+            alpha::decompress_bc3(&mut rgba, &block[..8]);
+        }
+
+        rgba
     }
 
     /// Compresses an image in memory
@@ -254,12 +302,12 @@ impl Format {
         assert!(output.len() >= self.compressed_size(width, height));
 
         let block_size = self.block_size();
-        let blocks_per_col = (height+3)/4;
-        let blocks_per_row = (width+3)/4;
+        let blocks_high = num_blocks(height);
+        let blocks_wide = num_blocks(width);
 
         // loop over blocks, rounding size to next multiple of 4
-        for y in 0..blocks_per_col {
-            for x in 0..blocks_per_row {
+        for y in 0..blocks_high {
+            for x in 0..blocks_wide {
 
                 // build the 4x4 block of pixels
                 let mut source_rgba = [[0u8; 4]; 16];
@@ -286,7 +334,7 @@ impl Format {
                 }
 
                 // compress block into output
-                let offset = x * block_size + y * blocks_per_row * block_size;
+                let offset = x * block_size + y * blocks_wide * block_size;
                 let block = &mut output[offset..offset+block_size];
                 self.compress_block_masked(source_rgba, mask, params, block);
             }

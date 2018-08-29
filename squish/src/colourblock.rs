@@ -21,7 +21,7 @@
 // SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-use core::mem;
+use core::{mem, u8};
 
 use byteorder::{ByteOrder, LittleEndian};
 
@@ -62,7 +62,7 @@ fn write_block(
 }
 
 
-pub fn write_colour_block3(
+pub fn write3(
     start: &Vec3,
     end: &Vec3,
     indices: &[u8; 16],
@@ -89,7 +89,7 @@ pub fn write_colour_block3(
 }
 
 
-pub fn write_colour_block4(
+pub fn write4(
     start: &Vec3,
     end: &Vec3,
     indices: &[u8; 16],
@@ -116,11 +116,13 @@ pub fn write_colour_block4(
 
 
 /// Convert a little endian 565-packed colour to 8bpc RGBA
-fn unpack_565(packed: u16) -> [u8; 4] {
+fn unpack_565(packed: &[u8]) -> [u8; 4] {
+    assert!(packed.len() == 2);
     // get components
-    let r = ((packed >> 11) & 0x1F) as u8;
-    let g = ((packed >> 5) & 0x3F) as u8;
-    let b = (packed & 0x1F) as u8;
+    let value: u16 = packed[0] as u16 | ((packed[1] as u16) << 8);
+    let r = ((value >> 11) & 0x1F) as u8;
+    let g = ((value >> 5) & 0x3F) as u8;
+    let b = (value & 0x1F) as u8;
 
     // scale up to 8 bits
     let r = (r << 3) | (r >> 2);
@@ -132,16 +134,16 @@ fn unpack_565(packed: u16) -> [u8; 4] {
 
 
 /// Decompress a BC1/2/3 block to 4x4 RGBA pixels
-pub fn decompress_colour(bytes: &[u8], is_bc1: bool) -> [[u8; 4]; 16] {
+pub fn decompress(bytes: &[u8], is_bc1: bool) -> [[u8; 4]; 16] {
     assert!(bytes.len() == 8);
 
-    let mut codes = [0u8; 4];
+    let mut codes = [0u8; 16];
 
     // unpack endpoints
-    let a = LittleEndian::read_u16(&bytes[0..1]);
-    let b = LittleEndian::read_u16(&bytes[2..3]);
-    codes[0..4].copy_from_slice(&unpack_565(a)[..]);
-    codes[4..8].copy_from_slice(&unpack_565(b)[..]);
+    let a = LittleEndian::read_u16(&bytes[0..2]);
+    let b = LittleEndian::read_u16(&bytes[2..4]);
+    codes[0..4].copy_from_slice(&unpack_565(&bytes[0..2]));
+    codes[4..8].copy_from_slice(&unpack_565(&bytes[2..4]));
 
     // generate intermediate values
     for i in 0..4 {
@@ -158,18 +160,19 @@ pub fn decompress_colour(bytes: &[u8], is_bc1: bool) -> [[u8; 4]; 16] {
     }
 
     // fill in alpha for intermediate values
-    codes[8+3] = 255u8;
-    codes[12+3] = if is_bc1 && (a <= b) {0u8} else {255u8};
+    codes[8+3] = u8::MAX;
+    codes[12+3] = if is_bc1 && (a <= b) {0u8} else {u8::MAX};
 
     // unpack LUT indices
     let mut indices = [0u8; 16];
     for i in 0..4 {
+        let ind = &mut indices[4*i..4*i+4];
         let packed = bytes[4 + i];
 
-        indices[4*i] = packed & 0x03;
-        indices[4*i + 1] = (packed >> 2) & 0x03;
-        indices[4*i + 2] = (packed >> 4) & 0x03;
-        indices[4*i + 3] = (packed >> 6) & 0x03;
+        ind[0] = packed & 0x03;
+        ind[1] = (packed >> 2) & 0x03;
+        ind[2] = (packed >> 4) & 0x03;
+        ind[3] = (packed >> 6) & 0x03;
     }
 
     let mut rgba = [[0u8; 4]; 16];

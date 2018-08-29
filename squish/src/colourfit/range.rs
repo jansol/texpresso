@@ -24,10 +24,10 @@
 use core::f32;
 
 use ::{ColourWeights, Format};
+use ::colourblock;
 use ::colourset::ColourSet;
 use ::math::{Sym3x3, Vec3};
 
-use super::colourblock::*;
 use super::ColourFitImpl;
 
 pub struct RangeFit<'a> {
@@ -167,7 +167,7 @@ impl<'a> ColourFitImpl<'a> for RangeFit<'a> {
 
         if self.compression_helper(&codes) {
             // build the best compressed blob
-            write_colour_block3(
+            colourblock::write3(
                 &self.start,
                 &self.end,
                 &self.indices,
@@ -187,7 +187,7 @@ impl<'a> ColourFitImpl<'a> for RangeFit<'a> {
 
         if self.compression_helper(&codes) {
             // build the best compressed blob
-            write_colour_block4(
+            colourblock::write4(
                 &self.start,
                 &self.end,
                 &self.indices,

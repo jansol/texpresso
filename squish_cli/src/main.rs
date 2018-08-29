@@ -31,7 +31,7 @@ use std::ffi::OsStr;
 use std::fs::File;
 use std::path::PathBuf;
 
-use ddsfile::{AlphaMode, Dds, D3D10ResourceDimension, DxgiFormat};
+use ddsfile::{AlphaMode, Dds, D3D10ResourceDimension, D3DFormat, DxgiFormat};
 use squish::{Format, Params};
 use structopt::StructOpt;
 
@@ -54,14 +54,55 @@ enum Opt {
         /// Compression format (BC1, BC2 or BC3)
         #[structopt(short = "f", long = "format")]
         format: Format,
+    },
+
+    /// Deompress a DDS file to PNG
+    #[structopt(name = "decompress")]
+    Decompress {
+        /// Output file (PNG)
+        #[structopt(short = "o", long = "output", parse(from_os_str))]
+        outfile: Option<PathBuf>,
+
+        /// Input file (DDS)
+        #[structopt(name = "INFILE", parse(from_os_str))]
+        infile: PathBuf,
     }
 }
 
 fn main() {
-    let (outfile, infile, format) = match Opt::from_args() {
-        Opt::Compress{outfile, infile, format} => (outfile, infile, format),
+    match Opt::from_args() {
+        Opt::Compress{outfile, infile, format} => compress_file(outfile, infile, format),
+        Opt::Decompress{outfile, infile} => decompress_file(outfile, infile),
     };
+}
 
+fn format_to_dxgiformat(f: Format) -> DxgiFormat {
+    match f {
+        Format::Bc1 => DxgiFormat::BC1_UNorm_sRGB,
+        Format::Bc2 => DxgiFormat::BC2_UNorm_sRGB,
+        Format::Bc3 => DxgiFormat::BC3_UNorm_sRGB,
+    }
+}
+
+fn dxgiformat_to_format(d: DxgiFormat) -> Format {
+    match d {
+        DxgiFormat::BC1_UNorm_sRGB => Format::Bc1,
+        DxgiFormat::BC2_UNorm_sRGB => Format::Bc2,
+        DxgiFormat::BC3_UNorm_sRGB => Format::Bc3,
+        _ => panic!("Unsupported DXGI format!"),
+    }
+}
+
+fn d3dformat_to_format(d: D3DFormat) -> Format {
+    match d {
+        D3DFormat::DXT1 => Format::Bc1,
+        D3DFormat::DXT3 => Format::Bc2,
+        D3DFormat::DXT5 => Format::Bc3,
+        _ => panic!("Unsupported D3D format!"),
+    }
+}
+
+fn compress_file(outfile: Option<PathBuf>, infile: PathBuf, format: Format) {
     let outfile = outfile.unwrap_or(
         PathBuf::new()
             .with_file_name(
@@ -75,8 +116,8 @@ fn main() {
                     .to_owned()
                     .to_lowercase();
     let image = match in_ext.as_str() {
-        "jpg" | "jpeg" => image::jpeg::read(infile),
-        "png" => image::png::read(infile),
+        "jpg" | "jpeg" => image::jpeg::read(&infile),
+        "png" => image::png::read(&infile),
         _ => panic!("Unrecognized image format. Supported formats are PNG and JPEG"),
     };
 
@@ -84,7 +125,7 @@ fn main() {
         0u8; format.compressed_size(image.width, image.height)
     ];
     format.compress(
-        &image.data[..],
+        &image.data,
         image.width,
         image.height,
         Params::default(),
@@ -103,7 +144,7 @@ fn main() {
         format_to_dxgiformat(format), 
         None, // mipmap_levels
         None, // array_layers 
-        None, // caps3
+        None, // caps2
         false, // is_cubemap 
         D3D10ResourceDimension::Texture2D, 
         alphamode
@@ -114,10 +155,40 @@ fn main() {
     dds.write(&mut outfile).unwrap();
 }
 
-fn format_to_dxgiformat(f: Format) -> DxgiFormat {
-    match f {
-        Format::Dxt1 => DxgiFormat::BC1_UNorm_sRGB,
-        Format::Dxt3 => DxgiFormat::BC2_UNorm_sRGB,
-        Format::Dxt5 => DxgiFormat::BC3_UNorm_sRGB,
+fn decompress_file(outfile: Option<PathBuf>, infile: PathBuf) {
+    let outfile = outfile.unwrap_or(
+        PathBuf::new()
+            .with_file_name(
+                infile.file_name()
+                    .unwrap_or(OsStr::new("output")))
+            .with_extension("png")
+    );
+
+    let mut infile = File::open(&infile).expect("Failed to open file");
+    let dds = Dds::read(&mut infile).unwrap();
+
+    let d3dformat = D3DFormat::try_from_pixel_format(&dds.header.spf);
+    let format;
+    if let Some(header10) = dds.header10 {
+        if header10.resource_dimension != D3D10ResourceDimension::Texture2D {
+            panic!("Only images with resource dimension Texture2D are supported");
+        }
+
+        format = dxgiformat_to_format(header10.dxgi_format)
+    } else {
+        format = d3dformat_to_format(d3dformat.unwrap());
     }
+
+    let width = dds.header.width as usize;
+    let height = dds.header.height as usize;
+    let mut decompressed = vec![0u8; 4*width*height];
+
+    format.decompress(
+        &dds.data,
+        width,
+        height,
+        &mut decompressed
+    );
+
+    image::png::write(&outfile, width as u32, height as u32, &decompressed);
 }

@@ -25,10 +25,10 @@ use core::f32;
 use core::cmp::Ordering;
 
 use ::{ColourWeights, Format};
+use ::colourblock;
 use ::colourset::ColourSet;
 use ::math::{Sym3x3, Vec3, Vec4};
 
-use super::colourblock::*;
 use super::ColourFitImpl;
 
 
@@ -280,7 +280,7 @@ impl<'a> ColourFitImpl<'a> for ClusterFit<'a> {
             // generate the compressed blob
             let a = best_start.to_vec3();
             let b = best_end.to_vec3();
-            write_colour_block3(&a, &b, &best_indices, &mut self.best_compressed);
+            colourblock::write3(&a, &b, &best_indices, &mut self.best_compressed);
 
             // save the error
             self.best_error = best_error;
@@ -427,7 +427,7 @@ impl<'a> ColourFitImpl<'a> for ClusterFit<'a> {
             // generate the compressed blob
             let a = best_start.to_vec3();
             let b = best_end.to_vec3();
-            write_colour_block4(&a, &b, &best_indices, &mut self.best_compressed);
+            colourblock::write4(&a, &b, &best_indices, &mut self.best_compressed);
 
             // save the error
             self.best_error = best_error;

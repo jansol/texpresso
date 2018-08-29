@@ -25,7 +25,6 @@ mod cluster;
 mod range;
 mod single;
 mod single_lut;
-mod colourblock;
 
 
 pub use self::cluster::ClusterFit;

@@ -20,14 +20,15 @@
 // SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-use std::path::PathBuf;
+use std::path::Path;
 use std::fs::File;
+use std::io::BufWriter;
 
-use png::{BitDepth, ColorType, Decoder, HasParameters, Transformations};
+use png::{BitDepth, ColorType, Decoder, Encoder, HasParameters, Transformations};
 
 use super::RawImage;
 
-pub fn read(path: PathBuf) -> RawImage {
+pub fn read(path: &Path) -> RawImage {
     let file = File::open(path).expect("Failed to open file");
     let mut decoder = Decoder::new(file);
     decoder.set(Transformations::EXPAND);
@@ -64,4 +65,15 @@ pub fn read(path: PathBuf) -> RawImage {
         height: info.height as usize,
         data: buf,
     }
+}
+
+pub fn write(path: &Path, width: u32, height: u32, data: &[u8]) {
+    let file = File::create(path).expect("Unable to create file");
+    let ref mut w = BufWriter::new(file);
+
+    let mut encoder = Encoder::new(w, width, height);
+    encoder.set(ColorType::RGBA).set(BitDepth::Eight);
+    let mut writer = encoder.write_header().unwrap();
+
+    writer.write_image_data(data).unwrap();
 }
