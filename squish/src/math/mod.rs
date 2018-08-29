@@ -44,7 +44,7 @@ impl Sym3x3 {
         
         // compute the centroid
         let total: f32 = weights.iter().sum();
-        let centroid: Vec3 = points.iter().zip(weights.iter())
+        let centroid: Vec3 = points.iter().zip(weights)
             .map(|(p, &w)| p*w).sum();
         
         let centroid = if total > f32::EPSILON {
@@ -56,7 +56,7 @@ impl Sym3x3 {
         // accumulate the covariance matrix
         let mut covariance = Sym3x3::new(0.0);
         
-        for (p, &w) in points.iter().zip(weights.iter())	{
+        for (p, &w) in points.iter().zip(weights)	{
             let a: Vec3 = p - &centroid;
             let b = &a * w;
 

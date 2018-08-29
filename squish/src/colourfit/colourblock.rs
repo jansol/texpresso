@@ -102,7 +102,7 @@ pub fn write_colour_block4(
     let mut remapped = [0u8; 16];
     if a < b {
         mem::swap(&mut a, &mut b);
-        for (mut remapped, index) in remapped.iter_mut().zip(indices.iter()) {
+        for (mut remapped, index) in remapped.iter_mut().zip(indices) {
             *remapped = (index ^ 0x01) & 0x03;
         }
     } else if a > b {
