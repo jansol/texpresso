@@ -21,7 +21,7 @@
 // SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-use std::ops::{Add, AddAssign, Mul, MulAssign, Sub, SubAssign};
+use core::ops::{Add, AddAssign, Mul, MulAssign, Sub, SubAssign};
 
 use super::Vec3;
 
@@ -433,4 +433,3 @@ impl MulAssign<f32> for Vec4 {
         self.w *= other;
     }
 }
-

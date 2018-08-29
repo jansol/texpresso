@@ -32,7 +32,7 @@ use std::fs::File;
 use std::path::PathBuf;
 
 use ddsfile::{AlphaMode, Dds, D3D10ResourceDimension, DxgiFormat};
-use squish::{Format, CompressorParams};
+use squish::{Format, Params};
 use structopt::StructOpt;
 
 mod image;
@@ -88,7 +88,7 @@ fn main() {
         image.width,
         image.height,
         format,
-        CompressorParams::default(),
+        Params::default(),
         &mut buf
     );
 

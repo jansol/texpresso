@@ -21,7 +21,7 @@
 // SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-use std::u32;
+use core::{u8, u32};
 
 use ::f32_to_i32_clamped;
 
@@ -53,7 +53,7 @@ pub fn compress_alpha_dxt3(
         tmp[i] = quant1 | (quant2 << 4)
     }
 
-    block.clone_from_slice(&tmp);
+    block.copy_from_slice(&tmp);
 }
 
 pub fn decompress_alpha_dxt3(rgba: &mut [[u8; 4]; 16], bytes: &[u8]) {
@@ -75,7 +75,7 @@ pub fn decompress_alpha_dxt3(rgba: &mut [[u8; 4]; 16], bytes: &[u8]) {
 
 fn fix_range(min: &mut u8, max: &mut u8, steps: u8) {
     if (*max-*min) < steps {
-        *max = (*min as i32 + steps as i32).min(255) as u8;
+        *max = (*min as i32 + steps as i32).min(u8::MAX as i32) as u8;
     }
     if (*max-*min) < steps {
         *min = (*max as i32 - steps as i32).max(0) as u8;
@@ -147,10 +147,10 @@ fn write_alpha_block(
         // store in 3 bytes
         let mut tmp = &mut buf[2+i*3..5+i*3];
         for j in 0..tmp.len() {
-            tmp[j] = ((value >> 8*j) & 0xff) as u8;
+            tmp[j] = ((value >> 8*j) & 0xFF) as u8;
         }
     }
-    block.clone_from_slice(&buf);
+    block.copy_from_slice(&buf);
 }
 
 fn write_alpha_block5(
@@ -210,9 +210,9 @@ pub fn compress_alpha_dxt5(
     block: &mut [u8]
 ) {
     // get range for 5-alpha and 7-alpha interpolation
-    let mut min5 = 255u8;
+    let mut min5 = u8::MAX;
     let mut max5 = 0u8;
-    let mut min7 = 255u8;
+    let mut min7 = u8::MAX;
     let mut max7 = 0u8;
 
     for i in 0..rgba.len() {
@@ -230,7 +230,7 @@ pub fn compress_alpha_dxt5(
         if value != 0 {
             min5 = min5.min(value);
         }
-        if value != 255 {
+        if value != u8::MAX {
             max5 = max5.max(value);
         }
     }
@@ -255,7 +255,7 @@ pub fn compress_alpha_dxt5(
         codes5[1+i as usize] = (((5 - i)*min5 as i32 + i*max5 as i32)/5) as u8;
     }
     codes5[6] = 0;
-    codes5[7] = 255;
+    codes5[7] = u8::MAX;
 
     // set up the 7-alpha codebook
     let mut codes7 = [0u8; 8];
@@ -296,7 +296,7 @@ pub fn decompress_alpha_dxt5(rgba: &mut [[u8; 4]; 16], bytes: &[u8]) {
             codes[1+i as usize] = (((5 - i)*alpha0 + i*alpha1)/5) as u8
         }
         codes[6] = 0;
-        codes[7] = 255;
+        codes[7] = u8::MAX;
     } else {
         // use 7-alpha codebook
         for i in 1..7i32 {

@@ -57,6 +57,6 @@ impl<'a, T> ColourFit<'a> for T where T: ColourFitImpl<'a> {
             self.compress4();
         }
 
-        block.clone_from_slice(self.best_compressed());
+        block.copy_from_slice(self.best_compressed());
     }
 }

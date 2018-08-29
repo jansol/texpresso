@@ -21,9 +21,9 @@
 // SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-use std::mem;
+use core::mem;
 
-use byteorder::{ByteOrder, LittleEndian, WriteBytesExt};
+use byteorder::{ByteOrder, LittleEndian};
 
 use math::Vec3;
 use ::f32_to_i32_clamped;
@@ -46,8 +46,8 @@ fn write_block(
     block: &mut [u8]
 ) {
     // write endpoints
-    <&mut [u8]>::write_u16::<LittleEndian>(&mut &mut block[0..2], a).unwrap();
-    <&mut [u8]>::write_u16::<LittleEndian>(&mut &mut block[2..4], b).unwrap();
+    LittleEndian::write_u16(&mut &mut block[0..2], a);
+    LittleEndian::write_u16(&mut &mut block[2..4], b);
 
     // write 2-bit LUT indices
     let mut packed = [0u8; 4];
@@ -58,7 +58,7 @@ fn write_block(
                     | (indices[4*i] & 0x03);
     }
 
-    block[4..].clone_from_slice(&packed);
+    block[4..].copy_from_slice(&packed);
 }
 
 
@@ -140,8 +140,8 @@ pub fn decompress_colour(bytes: &[u8], is_dxt1: bool) -> [[u8; 4]; 16] {
     // unpack endpoints
     let a = LittleEndian::read_u16(&bytes[0..1]);
     let b = LittleEndian::read_u16(&bytes[2..3]);
-    codes[0..4].clone_from_slice(&unpack_565(a)[..]);
-    codes[4..8].clone_from_slice(&unpack_565(b)[..]);
+    codes[0..4].copy_from_slice(&unpack_565(a)[..]);
+    codes[4..8].copy_from_slice(&unpack_565(b)[..]);
 
     // generate intermediate values
     for i in 0..4 {

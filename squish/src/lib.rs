@@ -24,10 +24,13 @@
 //! A pure Rust DXT1/3/5 compressor and decompressor based on Simon Brown's
 //! **libsquish**
 
+
+#![no_std]
+
 extern crate byteorder;
 
-use std::str::FromStr;
-use std::fmt;
+use core::str::FromStr;
+use core::fmt;
 
 mod alpha;
 mod colourblock;
@@ -54,7 +57,7 @@ pub enum ParseFormatError {
 
 impl fmt::Display for ParseFormatError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "InvalidFormat")
+        write!(f, "Not a valid")
     }
 }
 
@@ -73,7 +76,7 @@ impl FromStr for Format {
 
 /// Defines a compression algorithm
 #[derive(Clone, Copy, PartialEq, Eq)]
-pub enum CompressionAlgorithm {
+pub enum Algorithm {
     /// Fast, low quality
     RangeFit,
 
@@ -84,9 +87,9 @@ pub enum CompressionAlgorithm {
     IterativeClusterFit,
 }
 
-impl Default for CompressionAlgorithm {
+impl Default for Algorithm {
     fn default() -> Self {
-        CompressionAlgorithm::ClusterFit
+        Algorithm::ClusterFit
     }
 }
 
@@ -94,17 +97,15 @@ impl Default for CompressionAlgorithm {
 pub type ColourWeights = [f32; 3];
 
 /// Uniform weights for each colour channel
-#[allow(unused)]
 pub const COLOUR_WEIGHTS_UNIFORM: ColourWeights = [1.0, 1.0, 1.0];
 
 /// Weights based on the perceived brightness of each colour channel
-#[allow(unused)]
 pub const COLOUR_WEIGHTS_PERCEPTUAL: ColourWeights = [0.2126, 0.7152, 0.0722];
 
 #[derive(Clone, Copy)]
-pub struct CompressorParams {
+pub struct Params {
     /// The compression algorithm to be used
-    pub algorithm: CompressionAlgorithm,
+    pub algorithm: Algorithm,
 
     /// Weigh the relative importance of each colour channel when fitting
     /// (defaults to perceptual weights)
@@ -117,10 +118,10 @@ pub struct CompressorParams {
     pub weigh_colour_by_alpha: bool,
 }
 
-impl Default for CompressorParams {
+impl Default for Params {
     fn default() -> Self {
-        CompressorParams {
-            algorithm: CompressionAlgorithm::default(),
+        Params {
+            algorithm: Algorithm::default(),
             weights: COLOUR_WEIGHTS_PERCEPTUAL,
             weigh_colour_by_alpha: false,
         }
@@ -138,8 +139,9 @@ pub fn decompress(
     width: usize,
     height: usize,
     format: Format,
-) -> Vec<u8> {
-    vec![]
+    output: &mut [u8]
+) {
+
 }
 
 /// Returns how many bytes a 4x4 block of pixels will take after compression,
@@ -183,10 +185,10 @@ fn compress_block_masked(
     rgba: [[u8; 4]; 16],
     mask: u32,
     format: Format,
-    params: CompressorParams,
+    params: Params,
     output: &mut [u8]
 ) {
-    use CompressionAlgorithm as Algo;
+    use Algorithm as Algo;
 
     // compress alpha separately if necessary
     if format == Format::Dxt3 {
@@ -204,7 +206,7 @@ fn compress_block_masked(
     );
 
     let colour_offset = if format == Format::Dxt1 { 0 } else { 8 };
-    let mut colour_block = &mut output[colour_offset..colour_offset+8];
+    let colour_block = &mut output[colour_offset..colour_offset+8];
 
     // compress with appropriate compression algorithm
     if colours.count() == 1 {
@@ -253,7 +255,7 @@ pub fn compress(
     width: usize,
     height: usize,
     format: Format,
-    params: CompressorParams,
+    params: Params,
     output: &mut [u8]
 ) {
     assert!(output.len() >= compute_compressed_size(width, height, format));
@@ -282,7 +284,7 @@ pub fn compress(
                         // copy pixel value
                         let src_index = 4 * (width*sy + sx);
                         &mut source_rgba[index]
-                            .clone_from_slice(&rgba[src_index..src_index+4]);
+                            .copy_from_slice(&rgba[src_index..src_index+4]);
 
                         // enable pixel
                         mask |= 1 << index;

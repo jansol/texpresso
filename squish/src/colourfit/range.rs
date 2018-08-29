@@ -21,7 +21,7 @@
 // SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-use std::f32;
+use core::f32;
 
 use ::{ColourWeights, Format};
 use ::colourblock::*;

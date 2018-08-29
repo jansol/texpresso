@@ -21,8 +21,8 @@
 // SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign};
-use std::iter::Sum;
+use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign};
+use core::iter::Sum;
 
 /// A 3-dimensional vector type
 #[derive(Copy, Clone, PartialEq)]
@@ -433,4 +433,4 @@ impl Sum<Vec3> for Vec3 {
     fn sum<I: Iterator<Item=Vec3>>(iter: I) -> Self {
         iter.fold(Vec3::new(0.0, 0.0, 0.0), |a, b| a + b)
     }
-} 
+}
