@@ -145,8 +145,8 @@ impl<'a> RangeFit<'a> {
 }
 
 impl<'a> ColourFitImpl<'a> for RangeFit<'a> {
-    fn is_dxt1(&self) -> bool {
-        self.format == Format::Dxt1
+    fn is_bc1(&self) -> bool {
+        self.format == Format::Bc1
     }
 
     fn is_transparent(&self) -> bool {

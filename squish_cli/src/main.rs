@@ -38,7 +38,7 @@ use structopt::StructOpt;
 mod image;
 
 #[derive(StructOpt)]
-#[structopt(name = "squish", about = "A DXT1/3/5 compressor and decompressor")]
+#[structopt(name = "squish", about = "A BC1/2/3 compressor and decompressor")]
 enum Opt {
     /// Compress a PNG or JPEG file to DDS
     #[structopt(name = "compress")]
@@ -51,7 +51,7 @@ enum Opt {
         #[structopt(name = "INFILE", parse(from_os_str))]
         infile: PathBuf,
     
-        /// Compression format (DXT1, DXT3 or DXT5)
+        /// Compression format (BC1, BC2 or BC3)
         #[structopt(short = "f", long = "format")]
         format: Format,
     }
@@ -91,7 +91,7 @@ fn main() {
         &mut buf
     );
 
-    let alphamode = if format == Format::Dxt1 {
+    let alphamode = if format == Format::Bc1 {
         AlphaMode::PreMultiplied
     } else {
         AlphaMode::Straight

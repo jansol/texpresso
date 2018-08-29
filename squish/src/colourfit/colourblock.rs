@@ -131,8 +131,8 @@ fn unpack_565(packed: u16) -> [u8; 4] {
 }
 
 
-/// Decompress a DXT block to 4x4 RGBA pixels
-pub fn decompress_colour(bytes: &[u8], is_dxt1: bool) -> [[u8; 4]; 16] {
+/// Decompress a BC1/2/3 block to 4x4 RGBA pixels
+pub fn decompress_colour(bytes: &[u8], is_bc1: bool) -> [[u8; 4]; 16] {
     assert!(bytes.len() == 8);
 
     let mut codes = [0u8; 4];
@@ -148,7 +148,7 @@ pub fn decompress_colour(bytes: &[u8], is_dxt1: bool) -> [[u8; 4]; 16] {
         let c = codes[i];
         let d = codes[4 + i];
 
-        if is_dxt1 && (a <= b) {
+        if is_bc1 && (a <= b) {
             codes[8+i] = ((c as u32 + d as u32) / 2) as u8;
             codes[12+i] = 0;
         } else {
@@ -159,7 +159,7 @@ pub fn decompress_colour(bytes: &[u8], is_dxt1: bool) -> [[u8; 4]; 16] {
 
     // fill in alpha for intermediate values
     codes[8+3] = 255u8;
-    codes[12+3] = if is_dxt1 && (a <= b) {0u8} else {255u8};
+    codes[12+3] = if is_bc1 && (a <= b) {0u8} else {255u8};
 
     // unpack LUT indices
     let mut indices = [0u8; 16];

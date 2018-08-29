@@ -52,7 +52,7 @@ impl ColourSet {
             }
 
             // DXT uses binary alpha
-            if (format == Format::Dxt1) && (rgba[i][3] < 128u8) {
+            if (format == Format::Bc1) && (rgba[i][3] < 128u8) {
                 set.remap[i] = -1;
                 set.transparent = true;
                 continue;
@@ -86,7 +86,7 @@ impl ColourSet {
                         && ( rgba[i][0] == rgba[j][0] )
                         && ( rgba[i][1] == rgba[j][1] )
                         && ( rgba[i][2] == rgba[j][2] )
-                        && ( format != Format::Dxt1 || rgba[j][3] >= 128u8 );
+                        && ( format != Format::Bc1 || rgba[j][3] >= 128u8 );
                 if duplicate {
                     // get index of duplicate
                     let index = set.remap[j];

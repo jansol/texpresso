@@ -21,7 +21,7 @@
 // SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-//! A pure Rust DXT1/3/5 compressor and decompressor based on Simon Brown's
+//! A pure Rust BC1/2/3 compressor and decompressor based on Simon Brown's
 //! **libsquish**
 
 
@@ -44,9 +44,9 @@ use colourset::ColourSet;
 /// Defines a compression format
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Format {
-    Dxt1,
-    Dxt3,
-    Dxt5,
+    Bc1,
+    Bc2,
+    Bc3,
 }
 
 #[derive(Debug)]
@@ -56,7 +56,7 @@ pub enum ParseFormatError {
 
 impl fmt::Display for ParseFormatError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Not a valid")
+        write!(f, "Not a valid format name")
     }
 }
 
@@ -65,9 +65,9 @@ impl FromStr for Format {
 
     fn from_str(s: &str) -> Result<Format, ParseFormatError> {
         match s.to_lowercase().as_str() {
-            "dxt1" => Ok(Format::Dxt1),
-            "dxt3" => Ok(Format::Dxt3),
-            "dxt5" => Ok(Format::Dxt5),
+            "bc1" => Ok(Format::Bc1),
+            "bc2" => Ok(Format::Bc2),
+            "bc3" => Ok(Format::Bc3),
             _ => Err(ParseFormatError::InvalidFormat)
         }
     }
@@ -148,9 +148,9 @@ impl Format {
     fn block_size(self) -> usize {
         // Compressed block size in bytes
         match self {
-            Format::Dxt1 => 8,
-            Format::Dxt3 => 16,
-            Format::Dxt5 => 16,
+            Format::Bc1 => 8,
+            Format::Bc2 => 16,
+            Format::Bc3 => 16,
         }
     }
 
@@ -185,10 +185,10 @@ impl Format {
         output: &mut [u8]
     ) {
         // compress alpha separately if necessary
-        if self == Format::Dxt3 {
-            compress_alpha_dxt3(&rgba, mask, &mut output[..8]);
-        } else if self == Format::Dxt5 {
-            compress_alpha_dxt5(&rgba, mask, &mut output[..8]);
+        if self == Format::Bc2 {
+            compress_alpha_bc2(&rgba, mask, &mut output[..8]);
+        } else if self == Format::Bc3 {
+            compress_alpha_bc3(&rgba, mask, &mut output[..8]);
         }
 
         // create the minimal point set
@@ -199,7 +199,7 @@ impl Format {
             params.weigh_colour_by_alpha
         );
 
-        let colour_offset = if self == Format::Dxt1 { 0 } else { 8 };
+        let colour_offset = if self == Format::Bc1 { 0 } else { 8 };
         let colour_block = &mut output[colour_offset..colour_offset+8];
 
         // compress with appropriate compression algorithm
@@ -308,38 +308,38 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_storage_requirements_dxt1_exact() {
-        let estimate = Format::Dxt1.compressed_size(16, 32);
+    fn test_storage_requirements_bc1_exact() {
+        let estimate = Format::Bc1.compressed_size(16, 32);
         assert_eq!(estimate, 256);
     }
 
     #[test]
-    fn test_storage_requirements_dxt1_padded() {
-        let estimate = Format::Dxt1.compressed_size(15, 30);
+    fn test_storage_requirements_bc1_padded() {
+        let estimate = Format::Bc1.compressed_size(15, 30);
         assert_eq!(estimate, 256);
     }
 
     #[test]
-    fn test_storage_requirements_dxt3_exact() {
-        let estimate = Format::Dxt3.compressed_size(16, 32);
+    fn test_storage_requirements_bc2_exact() {
+        let estimate = Format::Bc2.compressed_size(16, 32);
         assert_eq!(estimate, 512);
     }
 
     #[test]
-    fn test_storage_requirements_dxt3_padded() {
-        let estimate = Format::Dxt3.compressed_size(15, 30);
+    fn test_storage_requirements_bc2_padded() {
+        let estimate = Format::Bc2.compressed_size(15, 30);
         assert_eq!(estimate, 512);
     }
 
     #[test]
-    fn test_storage_requirements_dxt5_exact() {
-        let estimate = Format::Dxt5.compressed_size(16, 32);
+    fn test_storage_requirements_bc3_exact() {
+        let estimate = Format::Bc3.compressed_size(16, 32);
         assert_eq!(estimate, 512);
     }
 
     #[test]
-    fn test_storage_requirements_dxt5_padded() {
-        let estimate = Format::Dxt5.compressed_size(15, 30);
+    fn test_storage_requirements_bc3_padded() {
+        let estimate = Format::Bc3.compressed_size(15, 30);
         assert_eq!(estimate, 512);
     }
 }

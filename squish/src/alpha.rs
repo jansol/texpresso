@@ -26,7 +26,7 @@ use core::{u8, u32};
 use ::f32_to_i32_clamped;
 
 
-pub fn compress_alpha_dxt3(
+pub fn compress_alpha_bc2(
     rgba: &[[u8; 4]; 16],
     mask: u32,
     block: &mut [u8]
@@ -56,7 +56,7 @@ pub fn compress_alpha_dxt3(
     block.copy_from_slice(&tmp);
 }
 
-pub fn decompress_alpha_dxt3(rgba: &mut [[u8; 4]; 16], bytes: &[u8]) {
+pub fn decompress_alpha_bc2(rgba: &mut [[u8; 4]; 16], bytes: &[u8]) {
     assert!(bytes.len() == 8);
 
     // unpack alpha values pairwise
@@ -204,7 +204,7 @@ fn write_alpha_block7(
     }
 }
 
-pub fn compress_alpha_dxt5(
+pub fn compress_alpha_bc3(
     rgba: &[[u8; 4]; 16],
     mask: u32,
     block: &mut [u8]
@@ -279,7 +279,7 @@ pub fn compress_alpha_dxt5(
     }
 }
 
-pub fn decompress_alpha_dxt5(rgba: &mut [[u8; 4]; 16], bytes: &[u8]) {
+pub fn decompress_alpha_bc3(rgba: &mut [[u8; 4]; 16], bytes: &[u8]) {
     assert!(bytes.len() == 8);
 
     // get endpoint values

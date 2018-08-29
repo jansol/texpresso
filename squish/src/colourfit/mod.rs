@@ -37,7 +37,7 @@ pub trait ColourFit<'a> {
 }
 
 pub trait ColourFitImpl<'a> {
-    fn is_dxt1(&self) -> bool;
+    fn is_bc1(&self) -> bool;
     fn is_transparent(&self) -> bool;
     fn compress3(&mut self);
     fn compress4(&mut self);
@@ -49,7 +49,7 @@ impl<'a, T> ColourFit<'a> for T where T: ColourFitImpl<'a> {
         &'a mut self,
         block: &mut [u8]
     ) {
-        if self.is_dxt1() {
+        if self.is_bc1() {
             self.compress3();
             if !self.is_transparent() {
                 self.compress4();
