@@ -101,14 +101,6 @@ impl<'a> RangeFit<'a> {
         fit
     }
 
-    fn is_dxt1(&self) -> bool {
-        self.format == Format::Dxt1
-    }
-
-    fn is_transparent(&self) -> bool {
-        self.colourset.is_transparent()
-    }
-
     fn compression_helper(&mut self, codes: &[Vec3]) -> bool {
         // cache some values
         let count = self.colourset.count();

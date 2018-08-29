@@ -56,14 +56,6 @@ impl<'a> SingleColourFit<'a> {
         }
     }
 
-    fn is_dxt1(&self) -> bool {
-        self.format == Format::Dxt1
-    }
-
-    fn is_transparent(&self) -> bool {
-        self.colourset.is_transparent()
-    }
-
     fn compute_endpoints(&mut self, lut: [&[SingleColourLookup; 256]; 3]) {
         // get colour for this block
         let colour = [

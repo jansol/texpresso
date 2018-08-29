@@ -88,7 +88,7 @@ pub enum Algorithm {
 
 impl Default for Algorithm {
     fn default() -> Self {
-        Algorithm::RangeFit
+        Algorithm::ClusterFit
     }
 }
 
