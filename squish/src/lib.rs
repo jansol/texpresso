@@ -66,9 +66,9 @@ impl FromStr for Format {
     fn from_str(s: &str) -> Result<Format, ParseFormatError> {
         // accept both modern and old (DirectX9) names
         match s.to_lowercase().as_str() {
-            "bc1" | "dxt1" => Ok(Format::Bc1),
-            "bc2" | "dxt3" => Ok(Format::Bc2),
-            "bc3" | "dxt5" => Ok(Format::Bc3),
+            "bc1" => Ok(Format::Bc1),
+            "bc2" => Ok(Format::Bc2),
+            "bc3" => Ok(Format::Bc3),
             _ => Err(ParseFormatError::InvalidFormat)
         }
     }
