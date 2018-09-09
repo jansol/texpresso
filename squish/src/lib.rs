@@ -64,7 +64,6 @@ impl FromStr for Format {
     type Err = ParseFormatError;
 
     fn from_str(s: &str) -> Result<Format, ParseFormatError> {
-        // accept both modern and old (DirectX9) names
         match s.to_lowercase().as_str() {
             "bc1" => Ok(Format::Bc1),
             "bc2" => Ok(Format::Bc2),

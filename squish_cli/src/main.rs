@@ -30,12 +30,19 @@ extern crate structopt;
 use std::ffi::OsStr;
 use std::fs::File;
 use std::path::PathBuf;
+use std::str::FromStr;
 
 use ddsfile::{AlphaMode, Dds, D3D10ResourceDimension, D3DFormat, DxgiFormat};
-use squish::{Format, Params};
+use squish::{Algorithm, COLOUR_WEIGHTS_PERCEPTUAL, Format, Params};
 use structopt::StructOpt;
 
 mod image;
+
+enum Profile {
+    Speed,
+    Balanced,
+    Quality,
+}
 
 #[derive(StructOpt)]
 #[structopt(name = "squish", about = "A BC1/2/3 compressor and decompressor")]
@@ -46,14 +53,26 @@ enum Opt {
         /// Output file (DDS)
         #[structopt(short = "o", long = "output", parse(from_os_str))]
         outfile: Option<PathBuf>,
-    
+
         /// Input file (PNG, JPG)
         #[structopt(name = "INFILE", parse(from_os_str))]
         infile: PathBuf,
-    
+
         /// Compression format (BC1, BC2 or BC3)
         #[structopt(short = "f", long = "format")]
         format: Format,
+
+        /// Compressor profile (speed, balanced, quality).
+        #[structopt(short = "p", long = "profile", default_value = "Balanced")]
+        profile: Profile,
+
+        /// Weigh colours by alpha while fitting. Can improve perceived quality in alpha-blended images.
+        #[structopt(long = "weigh-colour-by-alpha")]
+        weigh_colour_by_alpha: bool,
+
+        /// Colour weights to be used for matching colours during fitting. [Default: ]
+        #[structopt(short = "w", long = "weights")]
+        weights: Vec<f32>,
     },
 
     /// Deompress a DDS file to PNG
@@ -71,38 +90,34 @@ enum Opt {
 
 fn main() {
     match Opt::from_args() {
-        Opt::Compress{outfile, infile, format} => compress_file(outfile, infile, format),
+        Opt::Compress{outfile, infile, format, profile, weigh_colour_by_alpha, weights} => {
+            let w;
+            if weights.len() == 0 {
+                w = COLOUR_WEIGHTS_PERCEPTUAL;
+            }
+            else if weights.len() == 3 {
+                w = [weights[0], weights[1], weights[2]];
+            } else {
+                panic!("Weights must have 3 values");
+            }
+            let params = Params {
+                algorithm: profile.into(),
+                weights: w,
+                weigh_colour_by_alpha,
+            };
+            compress_file(outfile, infile, format, params)
+        },
         Opt::Decompress{outfile, infile} => decompress_file(outfile, infile),
     };
 }
 
-fn format_to_dxgiformat(f: Format) -> DxgiFormat {
-    match f {
-        Format::Bc1 => DxgiFormat::BC1_UNorm_sRGB,
-        Format::Bc2 => DxgiFormat::BC2_UNorm_sRGB,
-        Format::Bc3 => DxgiFormat::BC3_UNorm_sRGB,
-    }
-}
 
-fn dxgiformat_to_format(d: DxgiFormat) -> Format {
-    match d {
-        DxgiFormat::BC1_UNorm_sRGB => Format::Bc1,
-        DxgiFormat::BC2_UNorm_sRGB => Format::Bc2,
-        DxgiFormat::BC3_UNorm_sRGB => Format::Bc3,
-        _ => panic!("Unsupported DXGI format!"),
-    }
-}
-
-fn d3dformat_to_format(d: D3DFormat) -> Format {
-    match d {
-        D3DFormat::DXT1 => Format::Bc1,
-        D3DFormat::DXT3 => Format::Bc2,
-        D3DFormat::DXT5 => Format::Bc3,
-        _ => panic!("Unsupported D3D format!"),
-    }
-}
-
-fn compress_file(outfile: Option<PathBuf>, infile: PathBuf, format: Format) {
+fn compress_file(
+    outfile: Option<PathBuf>,
+    infile: PathBuf,
+    format: Format,
+    params: Params
+) {
     let outfile = outfile.unwrap_or(
         PathBuf::new()
             .with_file_name(
@@ -128,7 +143,7 @@ fn compress_file(outfile: Option<PathBuf>, infile: PathBuf, format: Format) {
         &image.data,
         image.width,
         image.height,
-        Params::default(),
+        params,
         &mut buf
     );
 
@@ -191,4 +206,56 @@ fn decompress_file(outfile: Option<PathBuf>, infile: PathBuf) {
     );
 
     image::png::write(&outfile, width as u32, height as u32, &decompressed);
+}
+
+
+impl FromStr for Profile {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Profile, String> {
+        match s.to_lowercase().as_str() {
+            "speed" => Ok(Profile::Speed),
+            "balanced" => Ok(Profile::Balanced),
+            "quality" => Ok(Profile::Quality),
+            _ => Err(String::from("Invalid profile specifier"))
+        }
+    }
+}
+
+impl Into<Algorithm> for Profile {
+    fn into(self) -> Algorithm {
+        match self {
+            Profile::Speed => Algorithm::RangeFit,
+            Profile::Balanced => Algorithm::ClusterFit,
+            Profile::Quality => Algorithm::IterativeClusterFit,
+        }
+    }
+}
+
+fn format_to_dxgiformat(f: Format) -> DxgiFormat {
+    match f {
+        Format::Bc1 => DxgiFormat::BC1_UNorm_sRGB,
+        Format::Bc2 => DxgiFormat::BC2_UNorm_sRGB,
+        Format::Bc3 => DxgiFormat::BC3_UNorm_sRGB,
+    }
+}
+
+
+fn dxgiformat_to_format(d: DxgiFormat) -> Format {
+    match d {
+        DxgiFormat::BC1_UNorm_sRGB => Format::Bc1,
+        DxgiFormat::BC2_UNorm_sRGB => Format::Bc2,
+        DxgiFormat::BC3_UNorm_sRGB => Format::Bc3,
+        _ => panic!("Unsupported DXGI format!"),
+    }
+}
+
+
+fn d3dformat_to_format(d: D3DFormat) -> Format {
+    match d {
+        D3DFormat::DXT1 => Format::Bc1,
+        D3DFormat::DXT3 => Format::Bc2,
+        D3DFormat::DXT5 => Format::Bc3,
+        _ => panic!("Unsupported D3D format!"),
+    }
 }
