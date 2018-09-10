@@ -117,10 +117,11 @@ fn main() {
 }
 
 fn compress_file(outfile: Option<PathBuf>, infile: &Path, format: Format, params: Params) {
-    let outfile = outfile.unwrap_or_else(||  PathBuf::new()
+    let outfile = outfile.unwrap_or_else(|| {
+        PathBuf::new()
             .with_file_name(infile.file_name().unwrap_or_else(|| OsStr::new("output")))
-            .with_extension("dds"),
-    );
+            .with_extension("dds")
+    });
     let in_ext = infile
         .extension()
         .expect("Input filename has no extension, can't guess type")
@@ -160,10 +161,11 @@ fn compress_file(outfile: Option<PathBuf>, infile: &Path, format: Format, params
 }
 
 fn decompress_file(outfile: Option<PathBuf>, infile: &Path) {
-    let outfile = outfile.unwrap_or_else(||  PathBuf::new()
+    let outfile = outfile.unwrap_or_else(|| {
+        PathBuf::new()
             .with_file_name(infile.file_name().unwrap_or_else(|| OsStr::new("output")))
-            .with_extension("png"),
-    );
+            .with_extension("png")
+    });
 
     let mut infile = File::open(&infile).expect("Failed to open file");
     let dds = Dds::read(&mut infile).unwrap();

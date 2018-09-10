@@ -95,7 +95,7 @@ fn fit_codes(rgba: &[[u8; 4]; 16], mask: u32, codes: [u8; 8], indices: &mut [u8;
         for (j, &code) in codes.iter().enumerate().take(8) {
             // get squared error from this code
             let dist = i32::from(value) - i32::from(code);
-            let dist = (dist*dist) as u32;
+            let dist = (dist * dist) as u32;
 
             // compare with best so far
             if dist < least {

@@ -31,7 +31,7 @@ pub struct SingleColourLookup {
 }
 
 macro_rules! entry {
-    ( $start0:expr, $end0:expr, $err0:expr, $start1:expr, $end1:expr, $err1:expr ) => {
+    ($start0:expr, $end0:expr, $err0:expr, $start1:expr, $end1:expr, $err1:expr) => {
         SingleColourLookup {
             sources: [
                 SourceBlock {
@@ -43,8 +43,8 @@ macro_rules! entry {
                     start: $start1,
                     end: $end1,
                     error: $err1,
-                }
-            ]
+                },
+            ],
         }
     };
 }

@@ -67,7 +67,7 @@ impl ColourSet {
                     let z = f32::from(rgba[i][2]) / 255f32;
 
                     // ensure weight is always nonzero even when alpha is not
-                    let w = (i32::from(rgba[i][3]) + 1) as f32/ 256f32;
+                    let w = (i32::from(rgba[i][3]) + 1) as f32 / 256f32;
 
                     // store point
                     set.points[set.count] = Vec3::new(x, y, z);
