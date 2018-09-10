@@ -98,7 +98,7 @@ pub fn write4(start: &Vec3, end: &Vec3, indices: &[u8; 16], block: &mut [u8]) {
 fn unpack_565(packed: &[u8]) -> [u8; 4] {
     assert!(packed.len() == 2);
     // get components
-    let value: u16 = packed[0] as u16 | ((packed[1] as u16) << 8);
+    let value: u16 = u16::from(packed[0]) | (u16::from(packed[1]) << 8);
     let r = ((value >> 11) & 0x1F) as u8;
     let g = ((value >> 5) & 0x3F) as u8;
     let b = (value & 0x1F) as u8;
@@ -125,15 +125,15 @@ pub fn decompress(bytes: &[u8], is_bc1: bool) -> [[u8; 4]; 16] {
 
     // generate intermediate values
     for i in 0..4 {
-        let c = codes[i];
-        let d = codes[4 + i];
+        let c = u32::from(codes[i]);
+        let d = u32::from(codes[4 + i]);
 
         if is_bc1 && (a <= b) {
-            codes[8 + i] = ((c as u32 + d as u32) / 2) as u8;
+            codes[8 + i] = ((c + d) / 2) as u8;
             codes[12 + i] = 0;
         } else {
-            codes[8 + i] = ((2 * c as u32 + d as u32) / 3) as u8;
-            codes[12 + i] = ((c as u32 + 2 * d as u32) / 3) as u8;
+            codes[8 + i] = ((2 * c + d) / 3) as u8;
+            codes[12 + i] = ((c + 2 * d) / 3) as u8;
         }
     }
 
@@ -156,10 +156,9 @@ pub fn decompress(bytes: &[u8], is_bc1: bool) -> [[u8; 4]; 16] {
     let mut rgba = [[0u8; 4]; 16];
     for i in 0..rgba.len() {
         let offset = 4 * indices[i] as usize;
+        let length = rgba[i].len();
 
-        for j in 0..rgba[i].len() {
-            rgba[i][j] = codes[offset + j];
-        }
+        rgba[i].copy_from_slice(&codes[offset..(offset + length)])
     }
 
     rgba

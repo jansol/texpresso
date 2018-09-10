@@ -20,7 +20,7 @@
 // TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 // SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-use core::{u32, u8};
+use core::{f32, u32, u8};
 
 use f32_to_i32_clamped;
 
@@ -28,8 +28,8 @@ pub fn compress_bc2(rgba: &[[u8; 4]; 16], mask: u32, block: &mut [u8]) {
     let mut tmp = [0u8; 8];
     for i in 0..tmp.len() {
         // quantise down to 4 bits
-        let alpha1 = rgba[2 * i][3] as f32 * (15.0 / 255.0);
-        let alpha2 = rgba[2 * i + 1][3] as f32 * (15.0 / 255.0);
+        let alpha1 = f32::from(rgba[2 * i][3]) * (15.0 / 255.0);
+        let alpha2 = f32::from(rgba[2 * i + 1][3]) * (15.0 / 255.0);
         let mut quant1 = f32_to_i32_clamped(alpha1, 15) as u8;
         let mut quant2 = f32_to_i32_clamped(alpha2, 15) as u8;
 
@@ -69,14 +69,14 @@ pub fn decompress_bc2(rgba: &mut [[u8; 4]; 16], bytes: &[u8]) {
 
 fn fix_range(min: &mut u8, max: &mut u8, steps: u8) {
     if (*max - *min) < steps {
-        *max = (*min as i32 + steps as i32).min(u8::MAX as i32) as u8;
+        *max = (i32::from(*min) + i32::from(steps)).min(i32::from(u8::MAX)) as u8;
     }
     if (*max - *min) < steps {
-        *min = (*max as i32 - steps as i32).max(0) as u8;
+        *min = (i32::from(*max) - i32::from(steps)).max(0) as u8;
     }
 }
 
-fn fit_codes(rgba: &[[u8; 4]; 16], mask: u32, codes: &[u8; 8], indices: &mut [u8; 16]) -> u32 {
+fn fit_codes(rgba: &[[u8; 4]; 16], mask: u32, codes: [u8; 8], indices: &mut [u8; 16]) -> u32 {
     let mut err = 0;
 
     // fit each alpha value to the codebook
@@ -92,10 +92,10 @@ fn fit_codes(rgba: &[[u8; 4]; 16], mask: u32, codes: &[u8; 8], indices: &mut [u8
         let value = rgba[i][3];
         let mut least = u32::MAX;
         let mut index = 0;
-        for j in 0..8 {
+        for (j, &code) in codes.iter().enumerate().take(8) {
             // get squared error from this code
-            let dist = value as i32 - codes[j] as i32;
-            let dist = (dist * dist) as u32;
+            let dist = i32::from(value) - i32::from(code);
+            let dist = (dist*dist) as u32;
 
             // compare with best so far
             if dist < least {
@@ -124,14 +124,14 @@ fn write_alpha_block(alpha0: u8, alpha1: u8, indices: &[u8; 16], block: &mut [u8
         // pack 8 3-bit values
         let mut value = 0u32;
         for j in 0..8 {
-            let index = indices[8 * i + j] as u32;
-            value |= index << 3 * j;
+            let index = u32::from(indices[8 * i + j]);
+            value |= index << (3 * j);
         }
 
         // store in 3 bytes
         let mut tmp = &mut buf[2 + i * 3..5 + i * 3];
-        for j in 0..tmp.len() {
-            tmp[j] = ((value >> 8 * j) & 0xFF) as u8;
+        for (j, t) in tmp.iter_mut().enumerate() {
+            *t = ((value >> (8 * j)) & 0xFF) as u8;
         }
     }
     block.copy_from_slice(&buf);
@@ -185,7 +185,7 @@ pub fn compress_bc3(rgba: &[[u8; 4]; 16], mask: u32, block: &mut [u8]) {
     let mut min7 = u8::MAX;
     let mut max7 = 0u8;
 
-    for i in 0..rgba.len() {
+    for (i, pixel) in rgba.iter().enumerate() {
         // skip masked-out bits
         let bit = 1 << i;
         if (mask & bit) == 0 {
@@ -193,7 +193,7 @@ pub fn compress_bc3(rgba: &[[u8; 4]; 16], mask: u32, block: &mut [u8]) {
         }
 
         // incorporate into the min/max
-        let value = rgba[i][3];
+        let value = pixel[3];
         min7 = min7.min(value);
         max7 = max7.max(value);
 
@@ -222,7 +222,7 @@ pub fn compress_bc3(rgba: &[[u8; 4]; 16], mask: u32, block: &mut [u8]) {
     codes5[0] = min5;
     codes5[1] = max5;
     for i in 1..5i32 {
-        codes5[1 + i as usize] = (((5 - i) * min5 as i32 + i * max5 as i32) / 5) as u8;
+        codes5[1 + i as usize] = (((5 - i) * i32::from(min5) + i * i32::from(max5)) / 5) as u8;
     }
     codes5[6] = 0;
     codes5[7] = u8::MAX;
@@ -232,14 +232,14 @@ pub fn compress_bc3(rgba: &[[u8; 4]; 16], mask: u32, block: &mut [u8]) {
     codes7[0] = min5;
     codes7[1] = max5;
     for i in 1..7i32 {
-        codes7[1 + i as usize] = (((7 - i) * min7 as i32 + i * max7 as i32) / 7) as u8;
+        codes7[1 + i as usize] = (((7 - i) * i32::from(min7) + i * i32::from(max7)) / 7) as u8;
     }
 
     // fit the data to both codebooks
     let mut indices5 = [0u8; 16];
     let mut indices7 = [0u8; 16];
-    let err5 = fit_codes(rgba, mask, &codes5, &mut indices5);
-    let err7 = fit_codes(rgba, mask, &codes7, &mut indices7);
+    let err5 = fit_codes(rgba, mask, codes5, &mut indices5);
+    let err7 = fit_codes(rgba, mask, codes7, &mut indices7);
 
     // save the block with the least error
     if err5 <= err7 {
@@ -253,13 +253,13 @@ pub fn decompress_bc3(rgba: &mut [[u8; 4]; 16], bytes: &[u8]) {
     assert!(bytes.len() == 8);
 
     // get endpoint values
-    let alpha0 = bytes[0] as i32;
-    let alpha1 = bytes[1] as i32;
+    let alpha0 = i32::from(bytes[0]);
+    let alpha1 = i32::from(bytes[1]);
 
     // build the codebook
     let mut codes = [0u8; 8];
-    codes[0] = alpha0 as u8;
-    codes[1] = alpha1 as u8;
+    codes[0] = bytes[0];
+    codes[1] = bytes[1];
     if alpha0 <= alpha1 {
         // use 5-alpha codebook
         for i in 1..5i32 {
@@ -280,19 +280,19 @@ pub fn decompress_bc3(rgba: &mut [[u8; 4]; 16], bytes: &[u8]) {
         // grab 3 bytes
         let mut value = 0i32;
         for j in 0..3 {
-            let byte = bytes[2 + 3 * i + j] as i32;
-            value |= byte << 8 * j;
+            let byte = i32::from(bytes[2 + 3 * i + j]);
+            value |= byte << (8 * j);
         }
 
         // unpack 8 3-bit values from it
         for j in 0..8 {
-            let index = (value >> 3 * j) & 0x07;
+            let index = (value >> (3 * j)) & 0x07;
             indices[8 * i + j] = index as u8;
         }
     }
 
     // write out the indexed codebook values
-    for i in 0..rgba.len() {
-        rgba[i][3] = codes[indices[i] as usize];
+    for (pixel, &index) in rgba.iter_mut().zip(indices.iter()) {
+        pixel[3] = codes[index as usize];
     }
 }

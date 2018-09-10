@@ -313,8 +313,7 @@ impl Div<f32> for Vec3 {
     type Output = Vec3;
 
     fn div(self, other: f32) -> Vec3 {
-        let t = 1.0 / other;
-        Vec3::new(self.x * t, self.y * t, self.z * t)
+        Vec3::new(self.x / other, self.y / other, self.z / other)
     }
 }
 
@@ -322,8 +321,7 @@ impl<'a> Div<f32> for &'a Vec3 {
     type Output = Vec3;
 
     fn div(self, other: f32) -> Vec3 {
-        let t = 1.0 / other;
-        Vec3::new(self.x * t, self.y * t, self.z * t)
+        Vec3::new(self.x / other, self.y / other, self.z / other)
     }
 }
 

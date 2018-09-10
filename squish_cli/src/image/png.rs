@@ -72,7 +72,7 @@ pub fn read(path: &Path) -> RawImage {
 
 pub fn write(path: &Path, width: u32, height: u32, data: &[u8]) {
     let file = File::create(path).expect("Unable to create file");
-    let ref mut w = BufWriter::new(file);
+    let w = &mut BufWriter::new(file);
 
     let mut encoder = Encoder::new(w, width, height);
     encoder.set(ColorType::RGBA).set(BitDepth::Eight);

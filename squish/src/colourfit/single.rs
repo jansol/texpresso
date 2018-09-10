@@ -83,21 +83,21 @@ impl<'a> SingleColourFit<'a> {
                 sources[channel] = &lookup[target as usize].sources[index];
 
                 // accumulate the error
-                let diff = sources[channel].error as u32;
+                let diff = u32::from(sources[channel].error);
                 error += diff * diff;
             }
 
             // keep these if the error is lower
             if error < self.error {
                 self.start = Vec3::new(
-                    sources[0].start as f32 / 31.0,
-                    sources[1].start as f32 / 63.0,
-                    sources[2].start as f32 / 31.0,
+                    f32::from(sources[0].start) / 31.0,
+                    f32::from(sources[1].start) / 63.0,
+                    f32::from(sources[2].start) / 31.0,
                 );
                 self.end = Vec3::new(
-                    sources[0].end as f32 / 31.0,
-                    sources[1].end as f32 / 63.0,
-                    sources[2].end as f32 / 31.0,
+                    f32::from(sources[0].end) / 31.0,
+                    f32::from(sources[1].end) / 63.0,
+                    f32::from(sources[2].end) / 31.0,
                 );
                 self.index = 2 * index as u8;
                 self.error = error;

@@ -58,7 +58,7 @@ impl Sym3x3 {
 
         for (p, &w) in points.iter().zip(weights) {
             let a: Vec3 = p - &centroid;
-            let b = &a * w;
+            let b = a * w;
 
             covariance.x[..][0] += a.x() * b.x();
             covariance.x[..][1] += a.x() * b.y();

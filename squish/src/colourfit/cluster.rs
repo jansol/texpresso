@@ -87,17 +87,17 @@ impl<'a> ClusterFit<'a> {
         }
 
         // sort fn for floats - NaN & Inf are pushed to the end of the list
-        fn fcmp(a: &f32, b: &f32) -> Ordering {
+        fn fcmp(a: f32, b: f32) -> Ordering {
             match (a, b) {
                 (x, y) if !x.is_finite() && !y.is_finite() => Ordering::Equal,
                 (x, _) if !x.is_finite() => Ordering::Greater,
                 (_, y) if !y.is_finite() => Ordering::Less,
-                (_, _) => a.partial_cmp(b).unwrap(),
+                (_, _) => a.partial_cmp(&b).unwrap(),
             }
         }
 
         // sort numbered list based on dot product value
-        dps.sort_by(|a, b| fcmp(&a.1, &b.1));
+        dps.sort_by(|a, b| fcmp(a.1, b.1));
 
         // this is our ordering now
         for (a, b) in self.order[iteration].iter_mut().zip(dps.iter()) {

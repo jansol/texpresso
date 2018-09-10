@@ -28,7 +28,7 @@ extern crate structopt;
 
 use std::ffi::OsStr;
 use std::fs::File;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
 use ddsfile::{AlphaMode, D3D10ResourceDimension, D3DFormat, Dds, DxgiFormat};
@@ -98,7 +98,7 @@ fn main() {
             weights,
         } => {
             let w;
-            if weights.len() == 0 {
+            if weights.is_empty() {
                 w = COLOUR_WEIGHTS_PERCEPTUAL;
             } else if weights.len() == 3 {
                 w = [weights[0], weights[1], weights[2]];
@@ -110,16 +110,15 @@ fn main() {
                 weights: w,
                 weigh_colour_by_alpha,
             };
-            compress_file(outfile, infile, format, params)
+            compress_file(outfile, &infile, format, params)
         }
-        Opt::Decompress { outfile, infile } => decompress_file(outfile, infile),
+        Opt::Decompress { outfile, infile } => decompress_file(outfile, &infile),
     };
 }
 
-fn compress_file(outfile: Option<PathBuf>, infile: PathBuf, format: Format, params: Params) {
-    let outfile = outfile.unwrap_or(
-        PathBuf::new()
-            .with_file_name(infile.file_name().unwrap_or(OsStr::new("output")))
+fn compress_file(outfile: Option<PathBuf>, infile: &Path, format: Format, params: Params) {
+    let outfile = outfile.unwrap_or_else(||  PathBuf::new()
+            .with_file_name(infile.file_name().unwrap_or_else(|| OsStr::new("output")))
             .with_extension("dds"),
     );
     let in_ext = infile
@@ -129,8 +128,8 @@ fn compress_file(outfile: Option<PathBuf>, infile: PathBuf, format: Format, para
         .to_owned()
         .to_lowercase();
     let image = match in_ext.as_str() {
-        "jpg" | "jpeg" => image::jpeg::read(&infile),
-        "png" => image::png::read(&infile),
+        "jpg" | "jpeg" => image::jpeg::read(infile),
+        "png" => image::png::read(infile),
         _ => panic!("Unrecognized image format. Supported formats are PNG and JPEG"),
     };
 
@@ -160,10 +159,9 @@ fn compress_file(outfile: Option<PathBuf>, infile: PathBuf, format: Format, para
     dds.write(&mut outfile).unwrap();
 }
 
-fn decompress_file(outfile: Option<PathBuf>, infile: PathBuf) {
-    let outfile = outfile.unwrap_or(
-        PathBuf::new()
-            .with_file_name(infile.file_name().unwrap_or(OsStr::new("output")))
+fn decompress_file(outfile: Option<PathBuf>, infile: &Path) {
+    let outfile = outfile.unwrap_or_else(||  PathBuf::new()
+            .with_file_name(infile.file_name().unwrap_or_else(|| OsStr::new("output")))
             .with_extension("png"),
     );
 

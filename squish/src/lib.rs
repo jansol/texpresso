@@ -294,7 +294,7 @@ impl Format {
                         if sx < width && sy < height {
                             // copy pixel value
                             let src_index = 4 * (width * sy + sx);
-                            &mut source_rgba[index]
+                            source_rgba[index]
                                 .copy_from_slice(&rgba[src_index..src_index + 4]);
 
                             // enable pixel

@@ -62,12 +62,12 @@ impl ColourSet {
                 // no duplicates found, store new point
                 if j == i {
                     // normalise coordinates to [0,1]
-                    let x = rgba[i][0] as f32 / 255f32;
-                    let y = rgba[i][1] as f32 / 255f32;
-                    let z = rgba[i][2] as f32 / 255f32;
+                    let x = f32::from(rgba[i][0]) / 255f32;
+                    let y = f32::from(rgba[i][1]) / 255f32;
+                    let z = f32::from(rgba[i][2]) / 255f32;
 
                     // ensure weight is always nonzero even when alpha is not
-                    let w = (rgba[i][3] as i32 + 1) as f32 / 256f32;
+                    let w = (i32::from(rgba[i][3]) + 1) as f32/ 256f32;
 
                     // store point
                     set.points[set.count] = Vec3::new(x, y, z);
@@ -91,7 +91,7 @@ impl ColourSet {
                     let index = set.remap[j];
 
                     // ensure weight is always nonzero even when alpha is not
-                    let w = (rgba[i][3] as i32 + 1) as f32 / 256f32;
+                    let w = (i32::from(rgba[i][3]) + 1) as f32 / 256f32;
 
                     // map this point to its duplicate and increase the duplicate's weight
                     set.weights[index as usize] += if alpha_weighted { w } else { 1f32 };
@@ -128,14 +128,14 @@ impl ColourSet {
     }
 
     pub fn remap_indices(&self, source: &[u8; 16], target: &mut [u8; 16]) {
-        for i in 0..target.len() {
+        for (i, target) in target.iter_mut().enumerate() {
             let j = self.remap[i];
 
             if j == -1 {
                 // palette has 4 elements, last one is transparent black if transparency is used
-                target[i] = 3;
+                *target = 3;
             } else {
-                target[i] = source[j as usize];
+                *target = source[j as usize];
             }
         }
     }

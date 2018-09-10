@@ -72,14 +72,14 @@ impl<'a> RangeFit<'a> {
             end = start;
             let mut min = start.dot(&principle);
             let mut max = min;
-            for i in 1..count {
-                let val = values[i].dot(&principle);
-                if val < min {
-                    start = values[i];
-                    min = val;
-                } else if val > max {
-                    end = values[i];
-                    max = val;
+            for &val in values.iter().take(count).skip(1) {
+                let dot = val.dot(&principle);
+                if dot < min {
+                    start = val;
+                    min = dot;
+                } else if dot > max {
+                    end = val;
+                    max = dot;
                 }
             }
         }
@@ -113,8 +113,8 @@ impl<'a> RangeFit<'a> {
             let mut dist = f32::MAX;
             let mut idx = 0;
 
-            for j in 0..codes.len() {
-                let d = (self.weights * (values[i] - codes[j])).length2();
+            for (j, code) in codes.iter().enumerate() {
+                let d = (self.weights * (values[i] - code)).length2();
                 if d < dist {
                     dist = d;
                     idx = j;
