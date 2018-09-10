@@ -69,7 +69,8 @@ enum Opt {
         #[structopt(long = "weigh-colour-by-alpha")]
         weigh_colour_by_alpha: bool,
 
-        /// Colour weights to be used for matching colours during fitting. [Default: ]
+        // TODO: replace with something nicer
+        /// Colour weights to be used for matching colours during fitting.
         #[structopt(short = "w", long = "weights")]
         weights: Vec<f32>,
     },
