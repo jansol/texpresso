@@ -2,7 +2,7 @@
 authors = ["Jan Solanti <jhs@psonet.com>"]
 license = "MIT"
 name = "squish_cli"
-version = "0.1.0"
+version = "1.0.0"
 
 [[bin]]
 name = "squish"
@@ -17,4 +17,4 @@ structopt = "0.2.10"
 
 [dependencies.squish]
 path = "../squish"
-version = "0.1"
+version = "1.0"
