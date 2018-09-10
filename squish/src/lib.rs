@@ -313,7 +313,7 @@ impl Format {
 }
 
 fn f32_to_i32_clamped(a: f32, limit: i32) -> i32 {
-    (a.round() as i32).max(0).min(limit)
+    a.round().max(0.0).min(limit as f32) as i32
 }
 
 //--------------------------------------------------------------------------------
