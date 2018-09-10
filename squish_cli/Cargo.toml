@@ -3,6 +3,15 @@ authors = ["Jan Solanti <jhs@psonet.com>"]
 license = "MIT"
 name = "squish_cli"
 version = "1.0.0"
+description = "A commandline utility for compressing images to DDS files using BC1/2/3. Serves mainly as a usage example of squish."
+exclude = ["src/assets/*"]
+homepage = "https://github.com/jansol/squish-rs"
+repository = "https://github.com/jansol/squish-rs"
+categories = ["compression", "game-engines", "multimedia::images", "multimedia::encoding", "rendering::data-formats"]
+keywords = ["DDS", "DXT", "texture", "compression"]
+
+[badges]
+travis-ci = {repository = "jansol/squish-rs"}
 
 [[bin]]
 name = "squish"

@@ -3,6 +3,14 @@ name = "squish"
 version = "1.0.0"
 license = "MIT"
 authors = ["Jan Solanti <jhs@psonet.com>"]
+description = "A pure Rust BC1/2/3 compressor and decompressor based on Simon Brown's libsquish"
+homepage = "https://github.com/jansol/squish-rs"
+repository = "https://github.com/jansol/squish-rs"
+categories = ["compression", "game-engines", "multimedia::images", "multimedia::encoding", "rendering::data-formats"]
+keywords = ["DDS", "DXT", "texture", "compression"]
+
+[badges]
+travis-ci = {repository = "jansol/squish-rs"}
 
 [dependencies]
 byteorder = "1.2"
