@@ -2,27 +2,26 @@
 // Copyright (c) 2018 Jan Solanti <jhs@psonet.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the 
+// a copy of this software and associated documentation files (the
 // "Software"), to	deal in the Software without restriction, including
 // without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to 
-// permit persons to whom the Software is furnished to do so, subject to 
+// distribute, sublicense, and/or sell copies of the Software, and to
+// permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
 //
 // The above copyright notice and this permission notice shall be included
 // in all copies or substantial portions of the Software.
 //
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-// IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY 
-// CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, 
-// TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+// IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+// CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+// TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 // SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-
-use ::Format;
 use math::*;
+use Format;
 
 pub struct ColourSet {
     count: usize,
@@ -36,7 +35,7 @@ impl ColourSet {
     pub fn new(rgba: &[[u8; 4]; 16], mask: u32, format: Format, alpha_weighted: bool) -> ColourSet {
         let mut set = ColourSet {
             count: 0,
-            points: [Vec3::new(0f32,0f32,0f32); 16],
+            points: [Vec3::new(0f32, 0f32, 0f32); 16],
             weights: [0f32; 16],
             remap: [0i8; 16],
             transparent: false,
@@ -83,14 +82,14 @@ impl ColourSet {
                 // check for duplicates
                 let oldbit = 1u32 << j;
                 let duplicate = ((mask & oldbit) != 0)
-                        && ( rgba[i][0] == rgba[j][0] )
-                        && ( rgba[i][1] == rgba[j][1] )
-                        && ( rgba[i][2] == rgba[j][2] )
-                        && ( format != Format::Bc1 || rgba[j][3] >= 128u8 );
+                    && (rgba[i][0] == rgba[j][0])
+                    && (rgba[i][1] == rgba[j][1])
+                    && (rgba[i][2] == rgba[j][2])
+                    && (format != Format::Bc1 || rgba[j][3] >= 128u8);
                 if duplicate {
                     // get index of duplicate
                     let index = set.remap[j];
-                    
+
                     // ensure weight is always nonzero even when alpha is not
                     let w = (rgba[i][3] as i32 + 1) as f32 / 256f32;
 

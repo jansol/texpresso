@@ -1,24 +1,23 @@
 // Copyright (c) 2018 Jan Solanti <jhs@psonet.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the 
+// a copy of this software and associated documentation files (the
 // "Software"), to	deal in the Software without restriction, including
 // without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to 
-// permit persons to whom the Software is furnished to do so, subject to 
+// distribute, sublicense, and/or sell copies of the Software, and to
+// permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
 //
 // The above copyright notice and this permission notice shall be included
 // in all copies or substantial portions of the Software.
 //
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-// IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY 
-// CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, 
-// TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+// IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+// CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+// TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 // SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
 
 extern crate ddsfile;
 extern crate jpeg_decoder;
@@ -32,8 +31,8 @@ use std::fs::File;
 use std::path::PathBuf;
 use std::str::FromStr;
 
-use ddsfile::{AlphaMode, Dds, D3D10ResourceDimension, D3DFormat, DxgiFormat};
-use squish::{Algorithm, COLOUR_WEIGHTS_PERCEPTUAL, Format, Params};
+use ddsfile::{AlphaMode, D3D10ResourceDimension, D3DFormat, Dds, DxgiFormat};
+use squish::{Algorithm, Format, Params, COLOUR_WEIGHTS_PERCEPTUAL};
 use structopt::StructOpt;
 
 mod image;
@@ -85,17 +84,23 @@ enum Opt {
         /// Input file (DDS)
         #[structopt(name = "INFILE", parse(from_os_str))]
         infile: PathBuf,
-    }
+    },
 }
 
 fn main() {
     match Opt::from_args() {
-        Opt::Compress{outfile, infile, format, profile, weigh_colour_by_alpha, weights} => {
+        Opt::Compress {
+            outfile,
+            infile,
+            format,
+            profile,
+            weigh_colour_by_alpha,
+            weights,
+        } => {
             let w;
             if weights.len() == 0 {
                 w = COLOUR_WEIGHTS_PERCEPTUAL;
-            }
-            else if weights.len() == 3 {
+            } else if weights.len() == 3 {
                 w = [weights[0], weights[1], weights[2]];
             } else {
                 panic!("Weights must have 3 values");
@@ -106,46 +111,31 @@ fn main() {
                 weigh_colour_by_alpha,
             };
             compress_file(outfile, infile, format, params)
-        },
-        Opt::Decompress{outfile, infile} => decompress_file(outfile, infile),
+        }
+        Opt::Decompress { outfile, infile } => decompress_file(outfile, infile),
     };
 }
 
-
-fn compress_file(
-    outfile: Option<PathBuf>,
-    infile: PathBuf,
-    format: Format,
-    params: Params
-) {
+fn compress_file(outfile: Option<PathBuf>, infile: PathBuf, format: Format, params: Params) {
     let outfile = outfile.unwrap_or(
         PathBuf::new()
-            .with_file_name(
-                infile.file_name()
-                    .unwrap_or(OsStr::new("output")))
-            .with_extension("dds")
+            .with_file_name(infile.file_name().unwrap_or(OsStr::new("output")))
+            .with_extension("dds"),
     );
-    let in_ext = infile.extension()
-                    .expect("Input filename has no extension, can't guess type")
-                    .to_string_lossy()
-                    .to_owned()
-                    .to_lowercase();
+    let in_ext = infile
+        .extension()
+        .expect("Input filename has no extension, can't guess type")
+        .to_string_lossy()
+        .to_owned()
+        .to_lowercase();
     let image = match in_ext.as_str() {
         "jpg" | "jpeg" => image::jpeg::read(&infile),
         "png" => image::png::read(&infile),
         _ => panic!("Unrecognized image format. Supported formats are PNG and JPEG"),
     };
 
-    let mut buf = vec![
-        0u8; format.compressed_size(image.width, image.height)
-    ];
-    format.compress(
-        &image.data,
-        image.width,
-        image.height,
-        params,
-        &mut buf
-    );
+    let mut buf = vec![0u8; format.compressed_size(image.width, image.height)];
+    format.compress(&image.data, image.width, image.height, params, &mut buf);
 
     let alphamode = if format == Format::Bc1 {
         AlphaMode::PreMultiplied
@@ -153,16 +143,16 @@ fn compress_file(
         AlphaMode::Straight
     };
     let mut dds = Dds::new_dxgi(
-        image.height as u32, 
-        image.width as u32, 
+        image.height as u32,
+        image.width as u32,
         None, // depth
-        format_to_dxgiformat(format), 
-        None, // mipmap_levels
-        None, // array_layers 
-        None, // caps2
-        false, // is_cubemap 
-        D3D10ResourceDimension::Texture2D, 
-        alphamode
+        format_to_dxgiformat(format),
+        None,  // mipmap_levels
+        None,  // array_layers
+        None,  // caps2
+        false, // is_cubemap
+        D3D10ResourceDimension::Texture2D,
+        alphamode,
     ).unwrap();
     dds.data = buf;
 
@@ -173,10 +163,8 @@ fn compress_file(
 fn decompress_file(outfile: Option<PathBuf>, infile: PathBuf) {
     let outfile = outfile.unwrap_or(
         PathBuf::new()
-            .with_file_name(
-                infile.file_name()
-                    .unwrap_or(OsStr::new("output")))
-            .with_extension("png")
+            .with_file_name(infile.file_name().unwrap_or(OsStr::new("output")))
+            .with_extension("png"),
     );
 
     let mut infile = File::open(&infile).expect("Failed to open file");
@@ -196,18 +184,12 @@ fn decompress_file(outfile: Option<PathBuf>, infile: PathBuf) {
 
     let width = dds.header.width as usize;
     let height = dds.header.height as usize;
-    let mut decompressed = vec![0u8; 4*width*height];
+    let mut decompressed = vec![0u8; 4 * width * height];
 
-    format.decompress(
-        &dds.data,
-        width,
-        height,
-        &mut decompressed
-    );
+    format.decompress(&dds.data, width, height, &mut decompressed);
 
     image::png::write(&outfile, width as u32, height as u32, &decompressed);
 }
-
 
 impl FromStr for Profile {
     type Err = String;
@@ -217,7 +199,7 @@ impl FromStr for Profile {
             "speed" => Ok(Profile::Speed),
             "balanced" => Ok(Profile::Balanced),
             "quality" => Ok(Profile::Quality),
-            _ => Err(String::from("Invalid profile specifier"))
+            _ => Err(String::from("Invalid profile specifier")),
         }
     }
 }
@@ -240,7 +222,6 @@ fn format_to_dxgiformat(f: Format) -> DxgiFormat {
     }
 }
 
-
 fn dxgiformat_to_format(d: DxgiFormat) -> Format {
     match d {
         DxgiFormat::BC1_UNorm_sRGB => Format::Bc1,
@@ -249,7 +230,6 @@ fn dxgiformat_to_format(d: DxgiFormat) -> Format {
         _ => panic!("Unsupported DXGI format!"),
     }
 }
-
 
 fn d3dformat_to_format(d: D3DFormat) -> Format {
     match d {

@@ -2,31 +2,30 @@
 // Copyright (c) 2018 Jan Solanti <jhs@psonet.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the 
+// a copy of this software and associated documentation files (the
 // "Software"), to	deal in the Software without restriction, including
 // without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to 
-// permit persons to whom the Software is furnished to do so, subject to 
+// distribute, sublicense, and/or sell copies of the Software, and to
+// permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
 //
 // The above copyright notice and this permission notice shall be included
 // in all copies or substantial portions of the Software.
 //
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-// IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY 
-// CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, 
-// TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+// IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+// CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+// TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 // SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
 
 use core::f32;
 
-use ::{ColourWeights, Format};
-use ::colourblock;
-use ::colourset::ColourSet;
-use ::math::{Sym3x3, Vec3};
+use colourblock;
+use colourset::ColourSet;
+use math::{Sym3x3, Vec3};
+use {ColourWeights, Format};
 
 use super::ColourFitImpl;
 
@@ -93,10 +92,10 @@ impl<'a> RangeFit<'a> {
 
         // clamp to the grid and save
         let grid = Vec3::new(31.0, 63.0, 31.0);
-        let gridrcp = Vec3::new(1.0/31.0, 1.0/63.0, 1.0/31.0);
+        let gridrcp = Vec3::new(1.0 / 31.0, 1.0 / 63.0, 1.0 / 31.0);
         let half = Vec3::new(0.5, 0.5, 0.5);
-        fit.start = (grid*start + half).truncate() * gridrcp;
-        fit.end = (grid*end + half).truncate() * gridrcp;
+        fit.start = (grid * start + half).truncate() * gridrcp;
+        fit.end = (grid * end + half).truncate() * gridrcp;
 
         fit
     }
@@ -159,11 +158,7 @@ impl<'a> ColourFitImpl<'a> for RangeFit<'a> {
 
     fn compress3(&mut self) {
         // create a codebook
-        let codes = [
-            self.start,
-            self.end,
-            self.start*0.5 + self.end*0.5,
-        ];
+        let codes = [self.start, self.end, self.start * 0.5 + self.end * 0.5];
 
         if self.compression_helper(&codes) {
             // build the best compressed blob
@@ -171,7 +166,7 @@ impl<'a> ColourFitImpl<'a> for RangeFit<'a> {
                 &self.start,
                 &self.end,
                 &self.indices,
-                &mut self.best_compressed
+                &mut self.best_compressed,
             );
         }
     }
@@ -181,8 +176,8 @@ impl<'a> ColourFitImpl<'a> for RangeFit<'a> {
         let codes = [
             self.start,
             self.end,
-            self.start*(2.0/3.0) + self.end*(1.0/3.0),
-            self.start*(1.0/3.0) + self.end*(2.0/3.0),
+            self.start * (2.0 / 3.0) + self.end * (1.0 / 3.0),
+            self.start * (1.0 / 3.0) + self.end * (2.0 / 3.0),
         ];
 
         if self.compression_helper(&codes) {
@@ -191,7 +186,7 @@ impl<'a> ColourFitImpl<'a> for RangeFit<'a> {
                 &self.start,
                 &self.end,
                 &self.indices,
-                &mut self.best_compressed
+                &mut self.best_compressed,
             );
         }
     }

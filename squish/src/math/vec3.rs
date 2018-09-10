@@ -2,27 +2,26 @@
 // Copyright (c) 2018 Jan Solanti <jhs@psonet.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the 
+// a copy of this software and associated documentation files (the
 // "Software"), to	deal in the Software without restriction, including
 // without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to 
-// permit persons to whom the Software is furnished to do so, subject to 
+// distribute, sublicense, and/or sell copies of the Software, and to
+// permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
 //
 // The above copyright notice and this permission notice shall be included
 // in all copies or substantial portions of the Software.
 //
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-// IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY 
-// CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, 
-// TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+// IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+// CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+// TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 // SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-
-use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign};
 use core::iter::Sum;
+use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign};
 
 /// A 3-dimensional vector type
 #[derive(Copy, Clone, PartialEq)]
@@ -61,7 +60,7 @@ impl Vec3 {
         Vec3::new(
             self.x.max(other.x),
             self.y.max(other.y),
-            self.z.max(other.z)
+            self.z.max(other.z),
         )
     }
 
@@ -69,16 +68,12 @@ impl Vec3 {
         Vec3::new(
             self.x.min(other.x),
             self.y.min(other.y),
-            self.z.min(other.z)
+            self.z.min(other.z),
         )
     }
 
     pub fn truncate(&self) -> Vec3 {
-        Vec3::new(
-            self.x.trunc(),
-            self.y.trunc(),
-            self.z.trunc()
-        )
+        Vec3::new(self.x.trunc(), self.y.trunc(), self.z.trunc())
     }
 }
 
@@ -86,11 +81,7 @@ impl<'a> Add for &'a Vec3 {
     type Output = Vec3;
 
     fn add(self, other: &'a Vec3) -> Vec3 {
-        Vec3::new(
-            self.x + other.x,
-            self.y + other.y,
-            self.z + other.z
-        )
+        Vec3::new(self.x + other.x, self.y + other.y, self.z + other.z)
     }
 }
 
@@ -98,11 +89,7 @@ impl Add for Vec3 {
     type Output = Vec3;
 
     fn add(self, other: Vec3) -> Vec3 {
-        Vec3::new(
-            self.x + other.x,
-            self.y + other.y,
-            self.z + other.z
-        )
+        Vec3::new(self.x + other.x, self.y + other.y, self.z + other.z)
     }
 }
 
@@ -118,11 +105,7 @@ impl<'a> Add<&'a Vec3> for Vec3 {
     type Output = Vec3;
 
     fn add(self, other: &'a Vec3) -> Vec3 {
-        Vec3::new(
-            self.x + other.x,
-            self.y + other.y,
-            self.z + other.z
-        )
+        Vec3::new(self.x + other.x, self.y + other.y, self.z + other.z)
     }
 }
 
@@ -138,11 +121,7 @@ impl Add<f32> for Vec3 {
     type Output = Vec3;
 
     fn add(self, other: f32) -> Vec3 {
-        Vec3::new(
-            self.x + other,
-            self.y + other,
-            self.z + other
-        )
+        Vec3::new(self.x + other, self.y + other, self.z + other)
     }
 }
 
@@ -150,11 +129,7 @@ impl<'a> Add<f32> for &'a Vec3 {
     type Output = Vec3;
 
     fn add(self, other: f32) -> Vec3 {
-        Vec3::new(
-            self.x + other,
-            self.y + other,
-            self.z + other
-        )
+        Vec3::new(self.x + other, self.y + other, self.z + other)
     }
 }
 
@@ -166,16 +141,11 @@ impl AddAssign<f32> for Vec3 {
     }
 }
 
-
 impl Sub for Vec3 {
     type Output = Vec3;
 
     fn sub(self, other: Vec3) -> Vec3 {
-        Vec3::new(
-            self.x - other.x,
-            self.y - other.y,
-            self.z - other.z
-        )
+        Vec3::new(self.x - other.x, self.y - other.y, self.z - other.z)
     }
 }
 
@@ -191,11 +161,7 @@ impl<'a> Sub<&'a Vec3> for Vec3 {
     type Output = Vec3;
 
     fn sub(self, other: &'a Vec3) -> Vec3 {
-        Vec3::new(
-            self.x - other.x,
-            self.y - other.y,
-            self.z - other.z
-        )
+        Vec3::new(self.x - other.x, self.y - other.y, self.z - other.z)
     }
 }
 
@@ -203,11 +169,7 @@ impl<'a> Sub for &'a Vec3 {
     type Output = Vec3;
 
     fn sub(self, other: &'a Vec3) -> Vec3 {
-        Vec3::new(
-            self.x - other.x,
-            self.y - other.y,
-            self.z - other.z
-        )
+        Vec3::new(self.x - other.x, self.y - other.y, self.z - other.z)
     }
 }
 
@@ -223,11 +185,7 @@ impl Sub<f32> for Vec3 {
     type Output = Vec3;
 
     fn sub(self, other: f32) -> Vec3 {
-        Vec3::new(
-            self.x - other,
-            self.y - other,
-            self.z - other
-        )
+        Vec3::new(self.x - other, self.y - other, self.z - other)
     }
 }
 
@@ -235,11 +193,7 @@ impl<'a> Sub<f32> for &'a Vec3 {
     type Output = Vec3;
 
     fn sub(self, other: f32) -> Vec3 {
-        Vec3::new(
-            self.x - other,
-            self.y - other,
-            self.z - other
-        )
+        Vec3::new(self.x - other, self.y - other, self.z - other)
     }
 }
 
@@ -251,30 +205,19 @@ impl SubAssign<f32> for Vec3 {
     }
 }
 
-
-
 impl<'a> Mul for &'a Vec3 {
     type Output = Vec3;
 
     fn mul(self, other: &'a Vec3) -> Vec3 {
-        Vec3::new(
-            self.x * other.x,
-            self.y * other.y,
-            self.z * other.z
-        )
+        Vec3::new(self.x * other.x, self.y * other.y, self.z * other.z)
     }
 }
-
 
 impl Mul for Vec3 {
     type Output = Vec3;
 
     fn mul(self, other: Vec3) -> Vec3 {
-        Vec3::new(
-            self.x * other.x,
-            self.y * other.y,
-            self.z * other.z
-        )
+        Vec3::new(self.x * other.x, self.y * other.y, self.z * other.z)
     }
 }
 
@@ -290,11 +233,7 @@ impl<'a> Mul<&'a Vec3> for Vec3 {
     type Output = Vec3;
 
     fn mul(self, other: &'a Vec3) -> Vec3 {
-        Vec3::new(
-            self.x * other.x,
-            self.y * other.y,
-            self.z * other.z
-        )
+        Vec3::new(self.x * other.x, self.y * other.y, self.z * other.z)
     }
 }
 
@@ -306,16 +245,11 @@ impl<'a> MulAssign<&'a Vec3> for Vec3 {
     }
 }
 
-
 impl Mul<f32> for Vec3 {
     type Output = Vec3;
 
     fn mul(self, other: f32) -> Vec3 {
-        Vec3::new(
-            self.x * other,
-            self.y * other,
-            self.z * other
-        )
+        Vec3::new(self.x * other, self.y * other, self.z * other)
     }
 }
 
@@ -323,11 +257,7 @@ impl<'a> Mul<f32> for &'a Vec3 {
     type Output = Vec3;
 
     fn mul(self, other: f32) -> Vec3 {
-        Vec3::new(
-            self.x * other,
-            self.y * other,
-            self.z * other
-        )
+        Vec3::new(self.x * other, self.y * other, self.z * other)
     }
 }
 
@@ -339,16 +269,11 @@ impl MulAssign<f32> for Vec3 {
     }
 }
 
-
 impl Div for Vec3 {
     type Output = Vec3;
 
     fn div(self, other: Vec3) -> Vec3 {
-        Vec3::new(
-            self.x / other.x,
-            self.y / other.y,
-            self.z / other.z
-        )
+        Vec3::new(self.x / other.x, self.y / other.y, self.z / other.z)
     }
 }
 
@@ -364,11 +289,7 @@ impl<'a> Div<&'a Vec3> for Vec3 {
     type Output = Vec3;
 
     fn div(self, other: &'a Vec3) -> Vec3 {
-        Vec3::new(
-            self.x / other.x,
-            self.y / other.y,
-            self.z / other.z
-        )
+        Vec3::new(self.x / other.x, self.y / other.y, self.z / other.z)
     }
 }
 
@@ -376,11 +297,7 @@ impl<'a> Div for &'a Vec3 {
     type Output = Vec3;
 
     fn div(self, other: &'a Vec3) -> Vec3 {
-        Vec3::new(
-            self.x / other.x,
-            self.y / other.y,
-            self.z / other.z
-        )
+        Vec3::new(self.x / other.x, self.y / other.y, self.z / other.z)
     }
 }
 
@@ -392,17 +309,12 @@ impl<'a> DivAssign<&'a Vec3> for Vec3 {
     }
 }
 
-
 impl Div<f32> for Vec3 {
     type Output = Vec3;
 
     fn div(self, other: f32) -> Vec3 {
         let t = 1.0 / other;
-        Vec3::new(
-            self.x * t,
-            self.y * t,
-            self.z * t
-        )
+        Vec3::new(self.x * t, self.y * t, self.z * t)
     }
 }
 
@@ -411,11 +323,7 @@ impl<'a> Div<f32> for &'a Vec3 {
 
     fn div(self, other: f32) -> Vec3 {
         let t = 1.0 / other;
-        Vec3::new(
-            self.x * t,
-            self.y * t,
-            self.z * t
-        )
+        Vec3::new(self.x * t, self.y * t, self.z * t)
     }
 }
 
@@ -428,9 +336,8 @@ impl DivAssign<f32> for Vec3 {
     }
 }
 
-
 impl Sum<Vec3> for Vec3 {
-    fn sum<I: Iterator<Item=Vec3>>(iter: I) -> Self {
+    fn sum<I: Iterator<Item = Vec3>>(iter: I) -> Self {
         iter.fold(Vec3::new(0.0, 0.0, 0.0), |a, b| a + b)
     }
 }

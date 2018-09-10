@@ -2,35 +2,33 @@
 // Copyright (c) 2018 Jan Solanti <jhs@psonet.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the 
+// a copy of this software and associated documentation files (the
 // "Software"), to	deal in the Software without restriction, including
 // without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to 
-// permit persons to whom the Software is furnished to do so, subject to 
+// distribute, sublicense, and/or sell copies of the Software, and to
+// permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
 //
 // The above copyright notice and this permission notice shall be included
 // in all copies or substantial portions of the Software.
 //
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-// IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY 
-// CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, 
-// TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+// IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+// CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+// TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 // SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-
-use core::f32;
 use core::cmp::Ordering;
+use core::f32;
 
-use ::{ColourWeights, Format};
-use ::colourblock;
-use ::colourset::ColourSet;
-use ::math::{Sym3x3, Vec3, Vec4};
+use colourblock;
+use colourset::ColourSet;
+use math::{Sym3x3, Vec3, Vec4};
+use {ColourWeights, Format};
 
 use super::ColourFitImpl;
-
 
 const MAX_ITERATIONS: usize = 8;
 
@@ -52,7 +50,7 @@ impl<'a> ClusterFit<'a> {
         colourset: &'a ColourSet,
         format: Format,
         weights: ColourWeights,
-        iterate: bool
+        iterate: bool,
     ) -> Self {
         let mut fit = ClusterFit {
             colourset,
@@ -63,15 +61,13 @@ impl<'a> ClusterFit<'a> {
             order: [[0u8; 16]; MAX_ITERATIONS],
             points_weights: [Vec4::new(0.0, 0.0, 0.0, 0.0); 16],
             xsum_wsum: Vec4::new(0.0, 0.0, 0.0, 0.0),
-            best_error: Vec4::new(f32::MAX,f32::MAX,f32::MAX,f32::MAX),
+            best_error: Vec4::new(f32::MAX, f32::MAX, f32::MAX, f32::MAX),
             best_compressed: [0u8; 8],
         };
 
         // get the covariance matrix
-        let covariance = Sym3x3::weighted_covariance(
-            fit.colourset.points(),
-            fit.colourset.weights()
-        );
+        let covariance =
+            Sym3x3::weighted_covariance(fit.colourset.points(), fit.colourset.weights());
 
         // get the principle component
         fit.principle = covariance.principle_component();
@@ -96,7 +92,7 @@ impl<'a> ClusterFit<'a> {
                 (x, y) if !x.is_finite() && !y.is_finite() => Ordering::Equal,
                 (x, _) if !x.is_finite() => Ordering::Greater,
                 (_, y) if !y.is_finite() => Ordering::Less,
-                (_, _) => a.partial_cmp(b).unwrap()
+                (_, _) => a.partial_cmp(b).unwrap(),
             }
         }
 
@@ -129,14 +125,9 @@ impl<'a> ClusterFit<'a> {
         self.xsum_wsum = Vec4::new(0.0, 0.0, 0.0, 0.0);
         for i in 0..count {
             let j = self.order[iteration][i] as usize;
-            let p = Vec4::new(
-                unweighted[j].x(),
-                unweighted[j].y(),
-                unweighted[j].z(),
-                1.0
-            );
+            let p = Vec4::new(unweighted[j].x(), unweighted[j].y(), unweighted[j].z(), 1.0);
             let w = Vec4::new(weights[j], weights[j], weights[j], weights[j]);
-            let x = p*w;
+            let x = p * w;
             self.points_weights[i] = x;
             self.xsum_wsum += x;
         }
@@ -166,7 +157,7 @@ impl<'a> ColourFitImpl<'a> for ClusterFit<'a> {
         let zero = Vec4::new(0.0, 0.0, 0.0, 0.0);
         let half = Vec4::new(0.5, 0.5, 0.5, 0.5);
         let grid = Vec4::new(31.0, 63.0, 31.0, 0.0);
-        let gridrcp = Vec4::new(1.0/31.0, 1.0/63.0, 1.0/31.0, 0.0);
+        let gridrcp = Vec4::new(1.0 / 31.0, 1.0 / 63.0, 1.0 / 31.0, 0.0);
 
         // check all possible clusters and iterate on the total order
         let mut best_start = zero;
@@ -190,11 +181,8 @@ impl<'a> ColourFitImpl<'a> for ClusterFit<'a> {
             let mut part0 = zero;
             for i in 0..count {
                 // second cluster [i,j) is halfway along
-                let mut part1 = if i == 0 {
-                    self.points_weights[0]
-                } else {
-                    zero
-                };
+                let mut part1 =
+                    if i == 0 { self.points_weights[0] } else { zero };
                 let jmin = if i == 0 { 1 } else { i };
 
                 for j in jmin..=count {
@@ -208,11 +196,11 @@ impl<'a> ColourFitImpl<'a> for ClusterFit<'a> {
                     let betax_sum = part1 * half_half2 + part2;
                     let beta2_sum = betax_sum.splat_w();
 
-                    let alphabeta_sum = (part1*half_half2).splat_w();
+                    let alphabeta_sum = (part1 * half_half2).splat_w();
 
                     // compute the least-squares optimal points
-                    let factor = ((alpha2_sum * beta2_sum) - alphabeta_sum * alphabeta_sum)
-                        .reciprocal();
+                    let factor =
+                        ((alpha2_sum * beta2_sum) - alphabeta_sum * alphabeta_sum).reciprocal();
                     let a = ((alphax_sum * beta2_sum) - betax_sum * alphabeta_sum) * factor;
                     let b = ((betax_sum * alpha2_sum) - alphax_sum * alphabeta_sum) * factor;
 
@@ -223,8 +211,8 @@ impl<'a> ColourFitImpl<'a> for ClusterFit<'a> {
                     let b = (grid * b + half).truncate() * gridrcp;
 
                     // compute the error (we skip the constant xxsum)
-                    let e1 = (a*a) * alpha2_sum + (b*b*beta2_sum);
-                    let e2 = (a*b*alphabeta_sum) - a * alphax_sum;
+                    let e1 = (a * a) * alpha2_sum + (b * b * beta2_sum);
+                    let e2 = (a * b * alphabeta_sum) - a * alphax_sum;
                     let e3 = e2 - b * betax_sum;
                     let e4 = two * e3 + e1;
 
@@ -250,7 +238,6 @@ impl<'a> ColourFitImpl<'a> for ClusterFit<'a> {
 
                 // advance
                 part0 += self.points_weights[i];
-
             }
 
             // stop if we didn't improve in this iteration
@@ -291,13 +278,13 @@ impl<'a> ColourFitImpl<'a> for ClusterFit<'a> {
         let count = self.colourset.count();
         let two = Vec4::new(2.0, 2.0, 2.0, 2.0);
         let one = Vec4::new(1.0, 1.0, 1.0, 1.0);
-        let onethird_onethird2 = Vec4::new(1.0/3.0, 1.0/3.0, 1.0/3.0, 1.0/9.0);
-        let twothirds_twothirds2= Vec4::new(2.0/3.0, 2.0/3.0, 2.0/3.0, 4.0/9.0);
-        let twoninths = Vec4::new(2.0/9.0, 2.0/9.0, 2.0/9.0, 2.0/9.0);
+        let onethird_onethird2 = Vec4::new(1.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0, 1.0 / 9.0);
+        let twothirds_twothirds2 = Vec4::new(2.0 / 3.0, 2.0 / 3.0, 2.0 / 3.0, 4.0 / 9.0);
+        let twoninths = Vec4::new(2.0 / 9.0, 2.0 / 9.0, 2.0 / 9.0, 2.0 / 9.0);
         let zero = Vec4::new(0.0, 0.0, 0.0, 0.0);
         let half = Vec4::new(0.5, 0.5, 0.5, 0.5);
         let grid = Vec4::new(31.0, 63.0, 31.0, 0.0);
-        let gridrcp = Vec4::new(1.0/31.0, 1.0/63.0, 1.0/31.0, 0.0);
+        let gridrcp = Vec4::new(1.0 / 31.0, 1.0 / 63.0, 1.0 / 31.0, 0.0);
 
         // check all possible clusters and iterate on the total order
         let mut best_start = zero;
@@ -331,28 +318,28 @@ impl<'a> ColourFitImpl<'a> for ClusterFit<'a> {
                     } else {
                         zero
                     };
-                    let kmin = if j == 0 { 1 } else { j };;
+                    let kmin = if j == 0 { 1 } else { j };
 
                     for k in kmin..=count {
                         // last cluster [k, count) is at the end
                         let part3 = self.xsum_wsum - part2 - part1 - part0;
 
                         // compute least squares terms directly
-                        let alphax_sum = part2 * onethird_onethird2
-                            + (part1 * twothirds_twothirds2 + part0);
+                        let alphax_sum =
+                            part2 * onethird_onethird2 + (part1 * twothirds_twothirds2 + part0);
                         let alpha2_sum = alphax_sum.splat_w();
 
-                        let betax_sum = part1 * onethird_onethird2
-                            + (part2 * twothirds_twothirds2 + part3);
+                        let betax_sum =
+                            part1 * onethird_onethird2 + (part2 * twothirds_twothirds2 + part3);
                         let beta2_sum = betax_sum.splat_w();
 
-                        let alphabeta_sum = twoninths*(part1+part2).splat_w();
+                        let alphabeta_sum = twoninths * (part1 + part2).splat_w();
 
                         // compute the least-squares optimal points
-                        let factor = ((alpha2_sum * beta2_sum) - alphabeta_sum * alphabeta_sum)
-                            .reciprocal();
+                        let factor =
+                            ((alpha2_sum * beta2_sum) - alphabeta_sum * alphabeta_sum).reciprocal();
                         let a = ((alphax_sum * beta2_sum) - betax_sum * alphabeta_sum) * factor;
-                        let b = ((betax_sum*alpha2_sum) - alphax_sum * alphabeta_sum) * factor;
+                        let b = ((betax_sum * alpha2_sum) - alphax_sum * alphabeta_sum) * factor;
 
                         // clamp to the grid
                         let a = one.min(zero.max(a));
@@ -361,8 +348,8 @@ impl<'a> ColourFitImpl<'a> for ClusterFit<'a> {
                         let b = (grid * b + half).truncate() * gridrcp;
 
                         // compute the error (we skip the constant xxsum)
-                        let e1 = (a*a) * alpha2_sum + (b*b*beta2_sum);
-                        let e2 = (a*b*alphabeta_sum) - a * alphax_sum;
+                        let e1 = (a * a) * alpha2_sum + (b * b * beta2_sum);
+                        let e2 = (a * b * alphabeta_sum) - a * alphax_sum;
                         let e3 = e2 - b * betax_sum;
                         let e4 = two * e3 + e1;
 

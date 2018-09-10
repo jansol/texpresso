@@ -2,35 +2,33 @@
 // Copyright (c) 2018 Jan Solanti <jhs@psonet.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the 
+// a copy of this software and associated documentation files (the
 // "Software"), to	deal in the Software without restriction, including
 // without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to 
-// permit persons to whom the Software is furnished to do so, subject to 
+// distribute, sublicense, and/or sell copies of the Software, and to
+// permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
 //
 // The above copyright notice and this permission notice shall be included
 // in all copies or substantial portions of the Software.
 //
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-// IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY 
-// CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, 
-// TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+// IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+// CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+// TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 // SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
 
 //! A pure Rust BC1/2/3 compressor and decompressor based on Simon Brown's
 //! **libsquish**
-
 
 #![no_std]
 
 extern crate byteorder;
 
-use core::str::FromStr;
 use core::fmt;
+use core::str::FromStr;
 
 mod alpha;
 mod colourblock;
@@ -51,7 +49,7 @@ pub enum Format {
 
 #[derive(Debug)]
 pub enum ParseFormatError {
-    InvalidFormat
+    InvalidFormat,
 }
 
 impl fmt::Display for ParseFormatError {
@@ -68,7 +66,7 @@ impl FromStr for Format {
             "bc1" => Ok(Format::Bc1),
             "bc2" => Ok(Format::Bc2),
             "bc3" => Ok(Format::Bc3),
-            _ => Err(ParseFormatError::InvalidFormat)
+            _ => Err(ParseFormatError::InvalidFormat),
         }
     }
 }
@@ -129,7 +127,7 @@ impl Default for Params {
 
 /// Returns number of blocks needed for an image of given dimension
 pub fn num_blocks(size: usize) -> usize {
-    (size + 3)/4
+    (size + 3) / 4
 }
 
 impl Format {
@@ -139,13 +137,7 @@ impl Format {
     /// * `width`  - The width of the source image
     /// * `height` - The height of the source image
     /// * `output` - Space to store the decompressed image
-    pub fn decompress(
-        self,
-        data: &[u8],
-        width: usize,
-        height: usize,
-        output: &mut [u8]
-    ) {
+    pub fn decompress(self, data: &[u8], width: usize, height: usize, output: &mut [u8]) {
         let blocks_wide = num_blocks(width);
         let blocks_high = num_blocks(height);
         let block_size = self.block_size();
@@ -154,19 +146,19 @@ impl Format {
         for y in 0..blocks_high {
             for x in 0..blocks_wide {
                 // decompress the block
-                let bidx = (x + y*blocks_wide) * block_size;
-                let rgba = self.decompress_block(&data[bidx..bidx+block_size]);
+                let bidx = (x + y * blocks_wide) * block_size;
+                let rgba = self.decompress_block(&data[bidx..bidx + block_size]);
 
                 // write the decompressed pixels to the correct image location
                 for py in 0..4 {
                     for px in 0..4 {
                         // get target location
-                        let sx = 4*x + px;
-                        let sy = 4*y + py;
+                        let sx = 4 * x + px;
+                        let sy = 4 * y + py;
 
                         if sx < width && sy < height {
                             for i in 0..4 {
-                                output[4*(sx + sy*width) + i] = rgba[px + py*4][i];
+                                output[4 * (sx + sy * width) + i] = rgba[px + py * 4][i];
                             }
                         }
                     }
@@ -190,11 +182,7 @@ impl Format {
     ///
     /// * `width`  - Width of the uncompressed image
     /// * `height` - Height of the uncompressed image
-    pub fn compressed_size(
-        self,
-        width: usize,
-        height: usize
-    ) -> usize {
+    pub fn compressed_size(self, width: usize, height: usize) -> usize {
         // Number of blocks required for image of given dimensions
         let blocks = num_blocks(width) * num_blocks(height);
         blocks * self.block_size()
@@ -212,7 +200,7 @@ impl Format {
         rgba: [[u8; 4]; 16],
         mask: u32,
         params: Params,
-        output: &mut [u8]
+        output: &mut [u8],
     ) {
         // compress alpha separately if necessary
         if self == Format::Bc2 {
@@ -222,15 +210,10 @@ impl Format {
         }
 
         // create the minimal point set
-        let colours = ColourSet::new(
-            &rgba,
-            mask,
-            self,
-            params.weigh_colour_by_alpha
-        );
+        let colours = ColourSet::new(&rgba, mask, self, params.weigh_colour_by_alpha);
 
         let colour_offset = if self == Format::Bc1 { 0 } else { 8 };
-        let colour_block = &mut output[colour_offset..colour_offset+8];
+        let colour_block = &mut output[colour_offset..colour_offset + 8];
 
         // compress with appropriate compression algorithm
         if colours.count() == 1 {
@@ -244,12 +227,7 @@ impl Format {
             fit.compress(colour_block);
         } else {
             let iterate = params.algorithm == Algorithm::IterativeClusterFit;
-            let mut fit = ClusterFit::new(
-                &colours,
-                self,
-                params.weights,
-                iterate
-            );
+            let mut fit = ClusterFit::new(&colours, self, params.weights, iterate);
             fit.compress(colour_block);
         }
     }
@@ -258,19 +236,13 @@ impl Format {
     ///
     /// * `block`  - The compressed block of pixels
     /// * `output` - Storage for the decompressed block of pixels
-    fn decompress_block(
-        self,
-        block: &[u8]
-    )  -> [[u8; 4]; 16]  {
+    fn decompress_block(self, block: &[u8]) -> [[u8; 4]; 16] {
         // get reference to the actual colour block
         let colour_offset = if self == Format::Bc1 { 0 } else { 8 };
-        let colour_block = &block[colour_offset..colour_offset+8];
+        let colour_block = &block[colour_offset..colour_offset + 8];
 
         // decompress colour
-        let mut rgba = colourblock::decompress(
-            colour_block,
-            self == Format::Bc1
-        );
+        let mut rgba = colourblock::decompress(colour_block, self == Format::Bc1);
 
         // decompress alpha separately if necessary
         if self == Format::Bc2 {
@@ -296,7 +268,7 @@ impl Format {
         width: usize,
         height: usize,
         params: Params,
-        output: &mut [u8]
+        output: &mut [u8],
     ) {
         assert!(output.len() >= self.compressed_size(width, height));
 
@@ -307,24 +279,23 @@ impl Format {
         // loop over blocks, rounding size to next multiple of 4
         for y in 0..blocks_high {
             for x in 0..blocks_wide {
-
                 // build the 4x4 block of pixels
                 let mut source_rgba = [[0u8; 4]; 16];
                 let mut mask = 0u32;
                 for py in 0..4 {
                     for px in 0..4 {
-                        let index = 4*py + px;
+                        let index = 4 * py + px;
 
                         // get position in source image
-                        let sx = 4*x + px;
-                        let sy = 4*y + py;
+                        let sx = 4 * x + px;
+                        let sy = 4 * y + py;
 
                         // enable pixel if within bounds
                         if sx < width && sy < height {
                             // copy pixel value
-                            let src_index = 4 * (width*sy + sx);
+                            let src_index = 4 * (width * sy + sx);
                             &mut source_rgba[index]
-                                .copy_from_slice(&rgba[src_index..src_index+4]);
+                                .copy_from_slice(&rgba[src_index..src_index + 4]);
 
                             // enable pixel
                             mask |= 1 << index;
@@ -334,7 +305,7 @@ impl Format {
 
                 // compress block into output
                 let offset = x * block_size + y * blocks_wide * block_size;
-                let block = &mut output[offset..offset+block_size];
+                let block = &mut output[offset..offset + block_size];
                 self.compress_block_masked(source_rgba, mask, params, block);
             }
         }
@@ -344,7 +315,6 @@ impl Format {
 fn f32_to_i32_clamped(a: f32, limit: i32) -> i32 {
     (a.round() as i32).max(0).min(limit)
 }
-
 
 //--------------------------------------------------------------------------------
 // Unit tests

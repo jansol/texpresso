@@ -2,24 +2,23 @@
 // Copyright (c) 2018 Jan Solanti <jhs@psonet.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the 
+// a copy of this software and associated documentation files (the
 // "Software"), to	deal in the Software without restriction, including
 // without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to 
-// permit persons to whom the Software is furnished to do so, subject to 
+// distribute, sublicense, and/or sell copies of the Software, and to
+// permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
 //
 // The above copyright notice and this permission notice shall be included
 // in all copies or substantial portions of the Software.
 //
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-// IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY 
-// CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, 
-// TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+// IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+// CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+// TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 // SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
 
 use core::ops::{Add, AddAssign, Mul, MulAssign, Sub, SubAssign};
 
@@ -79,7 +78,7 @@ impl Vec4 {
             self.x.max(other.x),
             self.y.max(other.y),
             self.z.max(other.z),
-            self.w.max(other.w)
+            self.w.max(other.w),
         )
     }
 
@@ -88,12 +87,12 @@ impl Vec4 {
             self.x.min(other.x),
             self.y.min(other.y),
             self.z.min(other.z),
-            self.w.min(other.w)
+            self.w.min(other.w),
         )
     }
 
     pub fn reciprocal(&self) -> Vec4 {
-        Vec4::new(1.0/self.x, 1.0/self.y, 1.0/self.z, 1.0/self.w)
+        Vec4::new(1.0 / self.x, 1.0 / self.y, 1.0 / self.z, 1.0 / self.w)
     }
 
     pub fn any_less_than(&self, other: &Vec4) -> bool {
@@ -101,7 +100,12 @@ impl Vec4 {
     }
 
     pub fn truncate(&self) -> Vec4 {
-        Vec4::new(self.x.trunc(), self.y.trunc(), self.z.trunc(), self.w.trunc())
+        Vec4::new(
+            self.x.trunc(),
+            self.y.trunc(),
+            self.z.trunc(),
+            self.w.trunc(),
+        )
     }
 }
 
@@ -113,7 +117,7 @@ impl Add for Vec4 {
             self.x + other.x,
             self.y + other.y,
             self.z + other.z,
-            self.w + other.w
+            self.w + other.w,
         )
     }
 }
@@ -126,7 +130,7 @@ impl<'a> Add for &'a Vec4 {
             self.x + other.x,
             self.y + other.y,
             self.z + other.z,
-            self.w + other.w
+            self.w + other.w,
         )
     }
 }
@@ -139,7 +143,7 @@ impl<'a> Add<Vec4> for &'a Vec4 {
             self.x + other.x,
             self.y + other.y,
             self.z + other.z,
-            self.w + other.w
+            self.w + other.w,
         )
     }
 }
@@ -152,7 +156,7 @@ impl<'a> Add<&'a Vec4> for Vec4 {
             self.x + other.x,
             self.y + other.y,
             self.z + other.z,
-            self.w + other.w
+            self.w + other.w,
         )
     }
 }
@@ -165,7 +169,7 @@ impl Add<f32> for Vec4 {
             self.x + other,
             self.y + other,
             self.z + other,
-            self.w + other
+            self.w + other,
         )
     }
 }
@@ -178,7 +182,7 @@ impl<'a> Add<f32> for &'a Vec4 {
             self.x + other,
             self.y + other,
             self.z + other,
-            self.w + other
+            self.w + other,
         )
     }
 }
@@ -210,9 +214,6 @@ impl AddAssign<f32> for Vec4 {
     }
 }
 
-
-
-
 impl Sub for Vec4 {
     type Output = Vec4;
 
@@ -221,7 +222,7 @@ impl Sub for Vec4 {
             self.x - other.x,
             self.y - other.y,
             self.z - other.z,
-            self.w - other.w
+            self.w - other.w,
         )
     }
 }
@@ -234,7 +235,7 @@ impl<'a> Sub for &'a Vec4 {
             self.x - other.x,
             self.y - other.y,
             self.z - other.z,
-            self.w - other.w
+            self.w - other.w,
         )
     }
 }
@@ -247,7 +248,7 @@ impl<'a> Sub<Vec4> for &'a Vec4 {
             self.x - other.x,
             self.y - other.y,
             self.z - other.z,
-            self.w - other.w
+            self.w - other.w,
         )
     }
 }
@@ -260,7 +261,7 @@ impl<'a> Sub<&'a Vec4> for Vec4 {
             self.x - other.x,
             self.y - other.y,
             self.z - other.z,
-            self.w - other.w
+            self.w - other.w,
         )
     }
 }
@@ -273,7 +274,7 @@ impl Sub<f32> for Vec4 {
             self.x - other,
             self.y - other,
             self.z - other,
-            self.w - other
+            self.w - other,
         )
     }
 }
@@ -286,7 +287,7 @@ impl<'a> Sub<f32> for &'a Vec4 {
             self.x - other,
             self.y - other,
             self.z - other,
-            self.w - other
+            self.w - other,
         )
     }
 }
@@ -318,9 +319,6 @@ impl SubAssign<f32> for Vec4 {
     }
 }
 
-
-
-
 impl Mul for Vec4 {
     type Output = Vec4;
 
@@ -329,7 +327,7 @@ impl Mul for Vec4 {
             self.x * other.x,
             self.y * other.y,
             self.z * other.z,
-            self.w * other.w
+            self.w * other.w,
         )
     }
 }
@@ -337,12 +335,12 @@ impl Mul for Vec4 {
 impl<'a> Mul for &'a Vec4 {
     type Output = Vec4;
 
-    fn  mul(self, other: &'a Vec4) -> Vec4 {
+    fn mul(self, other: &'a Vec4) -> Vec4 {
         Vec4::new(
             self.x * other.x,
             self.y * other.y,
             self.z * other.z,
-            self.w * other.w
+            self.w * other.w,
         )
     }
 }
@@ -350,12 +348,12 @@ impl<'a> Mul for &'a Vec4 {
 impl<'a> Mul<Vec4> for &'a Vec4 {
     type Output = Vec4;
 
-    fn  mul(self, other: Vec4) -> Vec4 {
+    fn mul(self, other: Vec4) -> Vec4 {
         Vec4::new(
             self.x * other.x,
             self.y * other.y,
             self.z * other.z,
-            self.w * other.w
+            self.w * other.w,
         )
     }
 }
@@ -363,12 +361,12 @@ impl<'a> Mul<Vec4> for &'a Vec4 {
 impl<'a> Mul<&'a Vec4> for Vec4 {
     type Output = Vec4;
 
-    fn  mul(self, other: &'a Vec4) -> Vec4 {
+    fn mul(self, other: &'a Vec4) -> Vec4 {
         Vec4::new(
             self.x * other.x,
             self.y * other.y,
             self.z * other.z,
-            self.w * other.w
+            self.w * other.w,
         )
     }
 }
@@ -381,7 +379,7 @@ impl Mul<f32> for Vec4 {
             self.x * other,
             self.y * other,
             self.z * other,
-            self.w * other
+            self.w * other,
         )
     }
 }
@@ -394,7 +392,7 @@ impl<'a> Mul<f32> for &'a Vec4 {
             self.x * other,
             self.y * other,
             self.z * other,
-            self.w * other
+            self.w * other,
         )
     }
 }

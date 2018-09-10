@@ -2,36 +2,35 @@
 // Copyright (c) 2018 Jan Solanti <jhs@psonet.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the 
+// a copy of this software and associated documentation files (the
 // "Software"), to	deal in the Software without restriction, including
 // without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to 
-// permit persons to whom the Software is furnished to do so, subject to 
+// distribute, sublicense, and/or sell copies of the Software, and to
+// permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
 //
 // The above copyright notice and this permission notice shall be included
 // in all copies or substantial portions of the Software.
 //
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-// IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY 
-// CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, 
-// TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+// IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+// CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+// TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 // SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
 
 use core::u32;
 
-use ::{Format, f32_to_i32_clamped};
-use ::colourblock;
-use ::colourset::ColourSet;
-use ::math::Vec3;
+use colourblock;
+use colourset::ColourSet;
+use math::Vec3;
+use {f32_to_i32_clamped, Format};
 
-use super::ColourFitImpl;
 use super::single_lut::*;
+use super::ColourFitImpl;
 
-pub struct SingleColourFit<'a> {    
+pub struct SingleColourFit<'a> {
     colourset: &'a ColourSet,
     format: Format,
     start: Vec3,
@@ -59,9 +58,9 @@ impl<'a> SingleColourFit<'a> {
     fn compute_endpoints(&mut self, lut: [&[SingleColourLookup; 256]; 3]) {
         // get colour for this block
         let colour = [
-            f32_to_i32_clamped(self.colourset.points()[0].x()*255.0, 255),
-            f32_to_i32_clamped(self.colourset.points()[0].y()*255.0, 255),
-            f32_to_i32_clamped(self.colourset.points()[0].z()*255.0, 255),
+            f32_to_i32_clamped(self.colourset.points()[0].x() * 255.0, 255),
+            f32_to_i32_clamped(self.colourset.points()[0].y() * 255.0, 255),
+            f32_to_i32_clamped(self.colourset.points()[0].z() * 255.0, 255),
         ];
 
         // check each index combination (endpoint and intermediate)
@@ -79,13 +78,13 @@ impl<'a> SingleColourFit<'a> {
                 // grab the lookup table and index for this channel
                 let lookup = &lut[channel];
                 let target = colour[channel];
-                
+
                 // store a reference to the source for this channel
                 sources[channel] = &lookup[target as usize].sources[index];
 
                 // accumulate the error
                 let diff = sources[channel].error as u32;
-                error += diff*diff;
+                error += diff * diff;
             }
 
             // keep these if the error is lower
@@ -100,7 +99,7 @@ impl<'a> SingleColourFit<'a> {
                     sources[1].end as f32 / 63.0,
                     sources[2].end as f32 / 31.0,
                 );
-                self.index = 2*index as u8;
+                self.index = 2 * index as u8;
                 self.error = error;
             }
         }
@@ -120,14 +119,9 @@ impl<'a> ColourFitImpl<'a> for SingleColourFit<'a> {
         &self.best_compressed
     }
 
-
     fn compress3(&mut self) {
         // build lookup table
-        let lut = [
-            &LOOKUP_5_3,
-            &LOOKUP_6_3,
-            &LOOKUP_5_3,
-        ];
+        let lut = [&LOOKUP_5_3, &LOOKUP_6_3, &LOOKUP_5_3];
 
         // find best endpoints and index
         self.compute_endpoints(lut);
@@ -136,28 +130,20 @@ impl<'a> ColourFitImpl<'a> for SingleColourFit<'a> {
         if self.error < self.best_error {
             // remap the indices
             let mut indices = [0u8; 16];
-            self.colourset.remap_indices(&[self.index; 16], &mut indices);
+            self.colourset
+                .remap_indices(&[self.index; 16], &mut indices);
 
             // build the compressed blob
-            colourblock::write3(
-                &self.start,
-                &self.end,
-                &indices,
-                &mut self.best_compressed
-            );
+            colourblock::write3(&self.start, &self.end, &indices, &mut self.best_compressed);
 
             // save the error
             self.best_error = self.error;
         }
     }
-    
+
     fn compress4(&mut self) {
         // build lookup table
-        let lut = [
-            &LOOKUP_5_4,
-            &LOOKUP_6_4,
-            &LOOKUP_5_4,
-        ];
+        let lut = [&LOOKUP_5_4, &LOOKUP_6_4, &LOOKUP_5_4];
 
         // find best endpoints and index
         self.compute_endpoints(lut);
@@ -166,15 +152,11 @@ impl<'a> ColourFitImpl<'a> for SingleColourFit<'a> {
         if self.error < self.best_error {
             // remap the indices
             let mut indices = [0u8; 16];
-            self.colourset.remap_indices(&[self.index; 16], &mut indices);
+            self.colourset
+                .remap_indices(&[self.index; 16], &mut indices);
 
             // build the compressed blob
-            colourblock::write4(
-                &self.start,
-                &self.end,
-                &indices,
-                &mut self.best_compressed
-            );
+            colourblock::write4(&self.start, &self.end, &indices, &mut self.best_compressed);
 
             // save the error
             self.best_error = self.error;
