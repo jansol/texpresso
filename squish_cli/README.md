@@ -1,4 +1,5 @@
 # Squish_cli
+[![Build Status](https://travis-ci.org/jansol/squish-rs.svg?branch=master)](https://travis-ci.org/jansol/squish-rs)
 A commandline utility for compressing images to DDS files using BC1/2/3. Serves mainly as a usage example of squish.
 
 ## Installation
