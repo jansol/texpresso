@@ -5,4 +5,4 @@ license = "MIT"
 authors = ["Jan Solanti <jhs@psonet.com>"]
 
 [dependencies]
-byteorder = "^1.2"
+byteorder = "1.2"

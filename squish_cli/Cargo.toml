@@ -10,11 +10,11 @@ path = "src/main.rs"
 doc = false
 
 [dependencies]
-ddsfile = "^0.2.3"
-jpeg-decoder = "^0.1.15"
-png = "^0.12.0"
-structopt = "^0.2.10"
+ddsfile = "0.2.3"
+jpeg-decoder = "0.1.15"
+png = "0.12.0"
+structopt = "0.2.10"
 
 [dependencies.squish]
 path = "../squish"
-version = "^0.1"
+version = "0.1"
