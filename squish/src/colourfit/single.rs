@@ -22,10 +22,10 @@
 
 use core::u32;
 
-use colourblock;
-use colourset::ColourSet;
-use math::Vec3;
-use {f32_to_i32_clamped, Format};
+use crate::colourblock;
+use crate::colourset::ColourSet;
+use crate::math::Vec3;
+use crate::{f32_to_i32_clamped, Format};
 
 use super::single_lut::*;
 use super::ColourFitImpl;

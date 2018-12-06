@@ -23,10 +23,10 @@
 use core::cmp::Ordering;
 use core::f32;
 
-use colourblock;
-use colourset::ColourSet;
-use math::{Sym3x3, Vec3, Vec4};
-use {ColourWeights, Format};
+use crate::colourblock;
+use crate::colourset::ColourSet;
+use crate::math::{Sym3x3, Vec3, Vec4};
+use crate::{ColourWeights, Format};
 
 use super::ColourFitImpl;
 

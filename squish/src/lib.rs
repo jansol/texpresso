@@ -25,8 +25,6 @@
 
 #![no_std]
 
-extern crate byteorder;
-
 use core::fmt;
 use core::str::FromStr;
 
@@ -36,8 +34,8 @@ mod colourfit;
 mod colourset;
 mod math;
 
-use colourfit::{ClusterFit, ColourFit, RangeFit, SingleColourFit};
-use colourset::ColourSet;
+use crate::colourfit::{ClusterFit, ColourFit, RangeFit, SingleColourFit};
+use crate::colourset::ColourSet;
 
 /// Defines a compression format
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

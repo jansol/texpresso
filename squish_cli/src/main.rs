@@ -23,7 +23,6 @@ extern crate ddsfile;
 extern crate jpeg_decoder;
 extern crate png;
 extern crate squish;
-#[macro_use]
 extern crate structopt;
 
 use std::ffi::OsStr;

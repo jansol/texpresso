@@ -24,8 +24,8 @@ use core::{mem, u8};
 
 use byteorder::{ByteOrder, LittleEndian};
 
-use f32_to_i32_clamped;
-use math::Vec3;
+use crate::f32_to_i32_clamped;
+use crate::math::Vec3;
 
 /// Convert a colour value to a little endian u16
 fn pack_565(colour: &Vec3) -> u16 {
@@ -82,7 +82,7 @@ pub fn write4(start: &Vec3, end: &Vec3, indices: &[u8; 16], block: &mut [u8]) {
     let mut remapped = [0u8; 16];
     if a < b {
         mem::swap(&mut a, &mut b);
-        for (mut remapped, index) in remapped.iter_mut().zip(indices) {
+        for (remapped, index) in remapped.iter_mut().zip(indices) {
             *remapped = (index ^ 0x01) & 0x03;
         }
     } else if a > b {

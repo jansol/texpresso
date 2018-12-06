@@ -20,8 +20,8 @@
 // TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 // SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-use math::*;
-use Format;
+use crate::math::*;
+use crate::Format;
 
 pub struct ColourSet {
     count: usize,

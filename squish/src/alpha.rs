@@ -22,7 +22,7 @@
 
 use core::{f32, u32, u8};
 
-use f32_to_i32_clamped;
+use crate::f32_to_i32_clamped;
 
 pub fn compress_bc2(rgba: &[[u8; 4]; 16], mask: u32, block: &mut [u8]) {
     let mut tmp = [0u8; 8];
@@ -129,7 +129,7 @@ fn write_alpha_block(alpha0: u8, alpha1: u8, indices: &[u8; 16], block: &mut [u8
         }
 
         // store in 3 bytes
-        let mut tmp = &mut buf[2 + i * 3..5 + i * 3];
+        let tmp = &mut buf[2 + i * 3..5 + i * 3];
         for (j, t) in tmp.iter_mut().enumerate() {
             *t = ((value >> (8 * j)) & 0xFF) as u8;
         }

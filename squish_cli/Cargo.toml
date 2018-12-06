@@ -3,6 +3,7 @@ authors = ["Jan Solanti <jhs@psonet.com>"]
 license = "MIT"
 name = "squish_cli"
 version = "1.0.0"
+edition = "2018"
 description = "A commandline utility for compressing images to DDS files using BC1/2/3. Serves mainly as a usage example of squish."
 exclude = ["src/assets/*"]
 homepage = "https://github.com/jansol/squish-rs"
