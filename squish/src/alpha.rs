@@ -145,7 +145,7 @@ fn write_alpha_block5(alpha0: u8, alpha1: u8, indices: &[u8; 16], block: &mut [u
             *index = match *index {
                 0 => 1,
                 1 => 0,
-                x @ 2...5 => 7 - x,
+                x @ 2..=5 => 7 - x,
                 x => x,
             }
         }

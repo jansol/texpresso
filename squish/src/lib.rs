@@ -51,7 +51,7 @@ pub enum ParseFormatError {
 }
 
 impl fmt::Display for ParseFormatError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Not a valid format name")
     }
 }
