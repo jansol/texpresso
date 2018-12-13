@@ -22,6 +22,8 @@
 
 use core::f32;
 
+use libm::F32Ext;
+
 mod vec3;
 pub use self::vec3::*;
 
@@ -94,4 +96,9 @@ impl Sym3x3 {
 
         v.to_vec3()
     }
+}
+
+
+pub fn f32_to_i32_clamped(a: f32, limit: i32) -> i32 {
+    a.round().max(0.0).min(limit as f32) as i32
 }

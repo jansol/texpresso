@@ -22,7 +22,7 @@
 
 use core::{f32, u32, u8};
 
-use crate::f32_to_i32_clamped;
+use crate::math::f32_to_i32_clamped;
 
 pub fn compress_bc2(rgba: &[[u8; 4]; 16], mask: u32, block: &mut [u8]) {
     let mut tmp = [0u8; 8];

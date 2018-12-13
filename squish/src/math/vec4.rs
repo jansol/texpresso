@@ -22,6 +22,8 @@
 
 use core::ops::{Add, AddAssign, Mul, MulAssign, Sub, SubAssign};
 
+use libm::F32Ext;
+
 use super::Vec3;
 
 #[derive(Copy, Clone, PartialEq)]

@@ -25,9 +25,6 @@
 
 #![no_std]
 
-use core::fmt;
-use core::str::FromStr;
-
 mod alpha;
 mod colourblock;
 mod colourfit;
@@ -43,30 +40,6 @@ pub enum Format {
     Bc1,
     Bc2,
     Bc3,
-}
-
-#[derive(Debug)]
-pub enum ParseFormatError {
-    InvalidFormat,
-}
-
-impl fmt::Display for ParseFormatError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Not a valid format name")
-    }
-}
-
-impl FromStr for Format {
-    type Err = ParseFormatError;
-
-    fn from_str(s: &str) -> Result<Format, ParseFormatError> {
-        match s.to_lowercase().as_str() {
-            "bc1" => Ok(Format::Bc1),
-            "bc2" => Ok(Format::Bc2),
-            "bc3" => Ok(Format::Bc3),
-            _ => Err(ParseFormatError::InvalidFormat),
-        }
-    }
 }
 
 /// Defines a compression algorithm
@@ -307,10 +280,6 @@ impl Format {
             }
         }
     }
-}
-
-fn f32_to_i32_clamped(a: f32, limit: i32) -> i32 {
-    a.round().max(0.0).min(limit as f32) as i32
 }
 
 //--------------------------------------------------------------------------------

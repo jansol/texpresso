@@ -24,8 +24,8 @@ use core::u32;
 
 use crate::colourblock;
 use crate::colourset::ColourSet;
-use crate::math::Vec3;
-use crate::{f32_to_i32_clamped, Format};
+use crate::math::{f32_to_i32_clamped, Vec3};
+use crate::Format;
 
 use super::single_lut::*;
 use super::ColourFitImpl;

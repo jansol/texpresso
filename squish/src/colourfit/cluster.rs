@@ -97,7 +97,7 @@ impl<'a> ClusterFit<'a> {
         }
 
         // sort numbered list based on dot product value
-        dps.sort_by(|a, b| fcmp(a.1, b.1));
+        dps.sort_unstable_by(|a, b| fcmp(a.1, b.1));
 
         // this is our ordering now
         for (a, b) in self.order[iteration].iter_mut().zip(dps.iter()) {

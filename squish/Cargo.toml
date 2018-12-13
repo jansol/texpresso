@@ -7,11 +7,11 @@ edition = "2018"
 description = "A pure Rust BC1/2/3 compressor and decompressor based on Simon Brown's libsquish"
 homepage = "https://github.com/jansol/squish-rs"
 repository = "https://github.com/jansol/squish-rs"
-categories = ["compression", "game-engines", "multimedia::images", "multimedia::encoding", "rendering::data-formats"]
+categories = ["compression", "multimedia::images", "multimedia::encoding", "no-std", "rendering::data-formats"]
 keywords = ["DDS", "DXT", "texture", "compression"]
 
 [badges]
 travis-ci = {repository = "jansol/squish-rs"}
 
 [dependencies]
-byteorder = "1.2"
+libm = "0.1"

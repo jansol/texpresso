@@ -23,6 +23,8 @@
 use core::iter::Sum;
 use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign};
 
+use libm::F32Ext;
+
 /// A 3-dimensional vector type
 #[derive(Copy, Clone, PartialEq)]
 pub struct Vec3 {

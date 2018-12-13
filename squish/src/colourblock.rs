@@ -22,24 +22,25 @@
 
 use core::{mem, u8};
 
-use byteorder::{ByteOrder, LittleEndian};
-
-use crate::f32_to_i32_clamped;
-use crate::math::Vec3;
+use crate::math::{f32_to_i32_clamped, Vec3};
 
 /// Convert a colour value to a little endian u16
 fn pack_565(colour: &Vec3) -> u16 {
-    let r = f32_to_i32_clamped(31.0 * colour.x(), 31) as u8;
-    let g = f32_to_i32_clamped(63.0 * colour.y(), 63) as u8;
-    let b = f32_to_i32_clamped(31.0 * colour.z(), 31) as u8;
+    let r = f32_to_i32_clamped(31.0 * colour.x(), 31) as u16;
+    let g = f32_to_i32_clamped(63.0 * colour.y(), 63) as u16;
+    let b = f32_to_i32_clamped(31.0 * colour.z(), 31) as u16;
 
-    LittleEndian::read_u16(&[(g << 5) | b, (r << 3) | (g >> 3)])
+    u16::from_le((r << 11) | (g << 5) | b)
 }
 
 fn write_block(a: u16, b: u16, indices: &[u8; 16], block: &mut [u8]) {
     // write endpoints
-    LittleEndian::write_u16(&mut &mut block[0..2], a);
-    LittleEndian::write_u16(&mut &mut block[2..4], b);
+    let a = a.to_le();
+    block[0] = (a >> 8) as u8;
+    block[1] = a as u8;
+    let b = b.to_le();
+    block[2] = (b >> 8) as u8;
+    block[3] = b as u8;
 
     // write 2-bit LUT indices
     let mut packed = [0u8; 4];
@@ -118,8 +119,8 @@ pub fn decompress(bytes: &[u8], is_bc1: bool) -> [[u8; 4]; 16] {
     let mut codes = [0u8; 16];
 
     // unpack endpoints
-    let a = LittleEndian::read_u16(&bytes[0..2]);
-    let b = LittleEndian::read_u16(&bytes[2..4]);
+    let a = u16::from_le( (u16::from(bytes[0]) << 8) | u16::from(bytes[1]) );
+    let b = u16::from_le( (u16::from(bytes[2]) << 8) | u16::from(bytes[3]) );
     codes[0..4].copy_from_slice(&unpack_565(&bytes[0..2]));
     codes[4..8].copy_from_slice(&unpack_565(&bytes[2..4]));
 
