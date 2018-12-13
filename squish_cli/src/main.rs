@@ -57,7 +57,7 @@ enum Opt {
         infile: PathBuf,
 
         /// Compression format (BC1, BC2 or BC3)
-        #[structopt(short = "f", long = "format")]
+        #[structopt(short = "f", long = "format", parse(try_from_str = "parse_format"))]
         format: Format,
 
         /// Compressor profile (speed, balanced, quality).
@@ -237,5 +237,14 @@ fn d3dformat_to_format(d: D3DFormat) -> Format {
         D3DFormat::DXT3 => Format::Bc2,
         D3DFormat::DXT5 => Format::Bc3,
         _ => panic!("Unsupported D3D format!"),
+    }
+}
+
+fn parse_format(s: &str) -> Result<Format, &'static str> {
+    match s.to_lowercase().as_ref() {
+        "bc1" => Ok(Format::Bc1),
+        "bc2" => Ok(Format::Bc2),
+        "bc3" => Ok(Format::Bc3),
+        _ => Err("invalid compression format specifier")
     }
 }
