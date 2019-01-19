@@ -19,22 +19,18 @@
 // TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 // SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-extern crate ddsfile;
-extern crate jpeg_decoder;
-extern crate png;
-extern crate squish;
-extern crate structopt;
-
 use std::ffi::OsStr;
 use std::fs::File;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
 use ddsfile::{AlphaMode, D3D10ResourceDimension, D3DFormat, Dds, DxgiFormat};
-use squish::{Algorithm, Format, Params, COLOUR_WEIGHTS_PERCEPTUAL};
+use squish::{Algorithm, Format, Params, COLOUR_WEIGHTS_PERCEPTUAL, num_blocks};
 use structopt::StructOpt;
+use rayon::prelude::*;
 
 mod image;
+use image::RawImage;
 
 enum Profile {
     Speed,
@@ -135,7 +131,8 @@ fn compress_file(outfile: Option<PathBuf>, infile: &Path, format: Format, params
     };
 
     let mut buf = vec![0u8; format.compressed_size(image.width, image.height)];
-    format.compress(&image.data, image.width, image.height, params, &mut buf);
+    parallel_compress(format, &image, &mut buf, params);
+    //format.compress(&image.data, image.width, image.height, params, &mut buf);
 
     let alphamode = if format == Format::Bc1 {
         AlphaMode::PreMultiplied
@@ -189,6 +186,45 @@ fn decompress_file(outfile: Option<PathBuf>, infile: &Path) {
     format.decompress(&dds.data, width, height, &mut decompressed);
 
     image::png::write(&outfile, width as u32, height as u32, &decompressed);
+}
+
+fn parallel_compress(format: Format, image: &RawImage, buf: &mut [u8], params: Params) {
+    let block_size = format.block_size();
+    let blocks_wide = num_blocks(image.width);
+
+    // loop over blocks, rounding size to next multiple of 4
+    buf.par_chunks_mut(block_size)
+        .enumerate()
+        .for_each(|(i, b)| {
+            let x = i % blocks_wide;
+            let y = i / blocks_wide;
+            // build the 4x4 block of pixels
+            let mut source_rgba = [[0u8; 4]; 16];
+            let mut mask = 0u32;
+            for py in 0..4 {
+                for px in 0..4 {
+                    let index = 4 * py + px;
+
+                    // get position in source image
+                    let sx = 4 * x + px;
+                    let sy = 4 * y + py;
+                    
+                    // enable pixel if within bounds
+                    if sx < image.width && sy < image.height {
+                        // copy pixel value
+                        let src_index = 4 * (image.width * sy + sx);
+                            source_rgba[index].copy_from_slice(&image.data[src_index..src_index + 4]);
+
+                        // enable pixel
+                        mask |= 1 << index;
+                    }
+                }
+            }
+
+            // compress block into output
+            let block = &mut b[0..block_size];
+            format.compress_block_masked(source_rgba, mask, params, block);
+        });
 }
 
 impl FromStr for Profile {
