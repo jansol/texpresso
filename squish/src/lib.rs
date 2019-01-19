@@ -139,7 +139,7 @@ impl Format {
     }
 
     /// Returns how many bytes a 4x4 block of pixels will compress into
-    fn block_size(self) -> usize {
+    pub fn block_size(self) -> usize {
         // Compressed block size in bytes
         match self {
             Format::Bc1 => 8,
@@ -166,7 +166,7 @@ impl Format {
     /// * `mask`   - The valid pixel mask
     /// * `params` - Additional compressor parameters
     /// * `output` - Storage for the compressed block
-    fn compress_block_masked(
+    pub fn compress_block_masked(
         self,
         rgba: [[u8; 4]; 16],
         mask: u32,
@@ -207,7 +207,7 @@ impl Format {
     ///
     /// * `block`  - The compressed block of pixels
     /// * `output` - Storage for the decompressed block of pixels
-    fn decompress_block(self, block: &[u8]) -> [[u8; 4]; 16] {
+    pub fn decompress_block(self, block: &[u8]) -> [[u8; 4]; 16] {
         // get reference to the actual colour block
         let colour_offset = if self == Format::Bc1 { 0 } else { 8 };
         let colour_block = &block[colour_offset..colour_offset + 8];
