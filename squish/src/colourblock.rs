@@ -30,17 +30,15 @@ fn pack_565(colour: &Vec3) -> u16 {
     let g = f32_to_i32_clamped(63.0 * colour.y(), 63) as u16;
     let b = f32_to_i32_clamped(31.0 * colour.z(), 31) as u16;
 
-    u16::from_le((r << 11) | (g << 5) | b)
+    (r << 11) | (g << 5) | b
 }
 
 fn write_block(a: u16, b: u16, indices: &[u8; 16], block: &mut [u8]) {
     // write endpoints
-    let a = a.to_le();
-    block[0] = (a >> 8) as u8;
-    block[1] = a as u8;
-    let b = b.to_le();
-    block[2] = (b >> 8) as u8;
-    block[3] = b as u8;
+    let a = a.to_le_bytes();
+    block[0..2].copy_from_slice(&a[..]);
+    let b = b.to_le_bytes();
+    block[2..4].copy_from_slice(&b[..]);
 
     // write 2-bit LUT indices
     let mut packed = [0u8; 4];
@@ -99,7 +97,9 @@ pub fn write4(start: &Vec3, end: &Vec3, indices: &[u8; 16], block: &mut [u8]) {
 fn unpack_565(packed: &[u8]) -> [u8; 4] {
     assert!(packed.len() == 2);
     // get components
-    let value: u16 = u16::from(packed[0]) | (u16::from(packed[1]) << 8);
+    let mut tmp = [0u8; 2];
+    tmp.copy_from_slice(&packed[0..2]);
+    let value: u16 = u16::from_le_bytes(tmp);
     let r = ((value >> 11) & 0x1F) as u8;
     let g = ((value >> 5) & 0x3F) as u8;
     let b = (value & 0x1F) as u8;
@@ -119,8 +119,11 @@ pub fn decompress(bytes: &[u8], is_bc1: bool) -> [[u8; 4]; 16] {
     let mut codes = [0u8; 16];
 
     // unpack endpoints
-    let a = u16::from_le( (u16::from(bytes[0]) << 8) | u16::from(bytes[1]) );
-    let b = u16::from_le( (u16::from(bytes[2]) << 8) | u16::from(bytes[3]) );
+    let mut tmp = [0u8; 2];
+    tmp.copy_from_slice(&bytes[0..2]);
+    let a = u16::from_le_bytes(tmp);
+    tmp.copy_from_slice(&bytes[2..4]);
+    let b = u16::from_le_bytes(tmp);
     codes[0..4].copy_from_slice(&unpack_565(&bytes[0..2]));
     codes[4..8].copy_from_slice(&unpack_565(&bytes[2..4]));
 
