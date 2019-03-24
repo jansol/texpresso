@@ -20,8 +20,6 @@
 // TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 // SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-use libm::F32Ext;
-
 use crate::math::*;
 use crate::Format;
 
@@ -107,7 +105,7 @@ impl ColourSet {
 
         // square root the weights
         for w in set.weights.iter_mut() {
-            *w = w.sqrt();
+            *w = libm::sqrtf(*w);
         }
 
         set

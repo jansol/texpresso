@@ -23,8 +23,6 @@
 use core::iter::Sum;
 use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign};
 
-use libm::F32Ext;
-
 /// A 3-dimensional vector type
 #[derive(Copy, Clone, PartialEq)]
 pub struct Vec3 {
@@ -75,7 +73,11 @@ impl Vec3 {
     }
 
     pub fn truncate(&self) -> Vec3 {
-        Vec3::new(self.x.trunc(), self.y.trunc(), self.z.trunc())
+        Vec3::new(
+            libm::truncf(self.x),
+            libm::truncf(self.y),
+            libm::truncf(self.z),
+        )
     }
 }
 

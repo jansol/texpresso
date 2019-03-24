@@ -22,8 +22,6 @@
 
 use core::ops::{Add, AddAssign, Mul, MulAssign, Sub, SubAssign};
 
-use libm::F32Ext;
-
 use super::Vec3;
 
 #[derive(Copy, Clone, PartialEq)]
@@ -103,10 +101,10 @@ impl Vec4 {
 
     pub fn truncate(&self) -> Vec4 {
         Vec4::new(
-            self.x.trunc(),
-            self.y.trunc(),
-            self.z.trunc(),
-            self.w.trunc(),
+            libm::truncf(self.x),
+            libm::truncf(self.y),
+            libm::truncf(self.z),
+            libm::truncf(self.w)
         )
     }
 }
