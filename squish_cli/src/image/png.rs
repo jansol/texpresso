@@ -23,14 +23,14 @@ use std::fs::File;
 use std::io::BufWriter;
 use std::path::Path;
 
-use png::{BitDepth, ColorType, Decoder, Encoder, HasParameters, Transformations};
+use png::{BitDepth, ColorType, Decoder, Encoder, Transformations};
 
 use super::RawImage;
 
 pub fn read(path: &Path) -> RawImage {
     let file = File::open(path).expect("Failed to open file");
     let mut decoder = Decoder::new(file);
-    decoder.set(Transformations::EXPAND);
+    decoder.set_transformations(Transformations::EXPAND);
 
     let (info, mut reader) = decoder
         .read_info()
@@ -75,7 +75,8 @@ pub fn write(path: &Path, width: u32, height: u32, data: &[u8]) {
     let w = &mut BufWriter::new(file);
 
     let mut encoder = Encoder::new(w, width, height);
-    encoder.set(ColorType::RGBA).set(BitDepth::Eight);
+    encoder.set_color(ColorType::RGBA);
+    encoder.set_depth(BitDepth::Eight);
     let mut writer = encoder.write_header().unwrap();
 
     writer.write_image_data(data).unwrap();

@@ -15,3 +15,4 @@ travis-ci = {repository = "jansol/squish-rs"}
 
 [dependencies]
 libm = "0.1"
+

@@ -22,10 +22,11 @@ doc = false
 [dependencies]
 ddsfile = "0.2.3"
 jpeg-decoder = "0.1.15"
-png = "0.12.0"
-structopt = "0.2.10"
+png = "0.15.0"
+structopt = "0.3.2"
 rayon = "1.0"
 
 [dependencies.squish]
 path = "../squish"
 version = "1.0"
+

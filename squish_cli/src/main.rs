@@ -53,7 +53,7 @@ enum Opt {
         infile: PathBuf,
 
         /// Compression format (BC1, BC2 or BC3)
-        #[structopt(short = "f", long = "format", parse(try_from_str = "parse_format"))]
+        #[structopt(short = "f", long = "format", parse(try_from_str = parse_format))]
         format: Format,
 
         /// Compressor profile (speed, balanced, quality).
