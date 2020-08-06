@@ -136,11 +136,11 @@ impl Format {
                         if sx < width && sy < height {
                             for i in 0..4 {
                                 output_row[4 * (sx + sy * width) + i] = rgba[px + py * 4][i];
+                            }
                         }
                     }
                 }
             }
-        }
         });
     }
 
@@ -250,7 +250,6 @@ impl Format {
         assert!(output.len() >= self.compressed_size(width, height));
 
         let block_size = self.block_size();
-        // let blocks_high = num_blocks(height);
         let blocks_wide = num_blocks(width);
 
         #[cfg(feature="rayon")]
