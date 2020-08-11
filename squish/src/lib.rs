@@ -33,6 +33,8 @@ mod math;
 
 use crate::colourfit::{ClusterFit, ColourFit, RangeFit, SingleColourFit};
 use crate::colourset::ColourSet;
+#[cfg(feature="rayon")]
+use rayon::prelude::*;
 
 /// Defines a compression format
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -110,11 +112,15 @@ impl Format {
     /// * `output` - Space to store the decompressed image
     pub fn decompress(self, data: &[u8], width: usize, height: usize, output: &mut [u8]) {
         let blocks_wide = num_blocks(width);
-        let blocks_high = num_blocks(height);
         let block_size = self.block_size();
 
+        #[cfg(feature="rayon")]
+        let output_rows = output.par_chunks_mut(width * 4 * 4);
+        #[cfg(not(feature="rayon"))]
+        let output_rows = output.chunks_mut(width * 4 * 4);
+
         // loop over blocks
-        for y in 0..blocks_high {
+        output_rows.enumerate().for_each(|(y, output_row)| {
             for x in 0..blocks_wide {
                 // decompress the block
                 let bidx = (x + y * blocks_wide) * block_size;
@@ -125,17 +131,17 @@ impl Format {
                     for px in 0..4 {
                         // get target location
                         let sx = 4 * x + px;
-                        let sy = 4 * y + py;
+                        let sy = py;
 
                         if sx < width && sy < height {
                             for i in 0..4 {
-                                output[4 * (sx + sy * width) + i] = rgba[px + py * 4][i];
+                                output_row[4 * (sx + sy * width) + i] = rgba[px + py * 4][i];
                             }
                         }
                     }
                 }
             }
-        }
+        });
     }
 
     /// Returns how many bytes a 4x4 block of pixels will compress into
@@ -244,14 +250,19 @@ impl Format {
         assert!(output.len() >= self.compressed_size(width, height));
 
         let block_size = self.block_size();
-        let blocks_high = num_blocks(height);
         let blocks_wide = num_blocks(width);
 
-        // loop over blocks, rounding size to next multiple of 4
-        for y in 0..blocks_high {
-            for x in 0..blocks_wide {
+        #[cfg(feature="rayon")]
+        let output_rows = output.par_chunks_mut(blocks_wide * block_size);
+        #[cfg(not(feature="rayon"))]
+        let output_rows = output.chunks_mut(blocks_wide * block_size);
+
+        output_rows.enumerate().for_each(|(y, output_row)| {
+            let mut source_rgba = [[0u8; 4]; 16];
+            let output_blocks = output_row.chunks_mut(block_size);
+
+            output_blocks.enumerate().for_each(|(x, output_block)| {
                 // build the 4x4 block of pixels
-                let mut source_rgba = [[0u8; 4]; 16];
                 let mut mask = 0u32;
                 for py in 0..4 {
                     for px in 0..4 {
@@ -273,12 +284,9 @@ impl Format {
                     }
                 }
 
-                // compress block into output
-                let offset = x * block_size + y * blocks_wide * block_size;
-                let block = &mut output[offset..offset + block_size];
-                self.compress_block_masked(source_rgba, mask, params, block);
-            }
-        }
+                self.compress_block_masked(source_rgba, mask, params, output_block);
+            });
+        });
     }
 }
 
