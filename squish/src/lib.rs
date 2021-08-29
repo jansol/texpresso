@@ -364,7 +364,7 @@ mod tests {
     }
 
     #[test]
-    fn test_bc1_compression_gray_cluster_fit() {
+    fn test_bc1_compression_gray() {
         fn test(algorithm: Algorithm) {
             let mut output_actual = [0u8; 8];
             Format::Bc1.compress(
@@ -421,7 +421,7 @@ mod tests {
     }
 
     #[test]
-    fn test_bc1_compression_colour_cluster_fit() {
+    fn test_bc1_compression_colour() {
         fn test(algorithm: Algorithm) {
             let mut output_actual = [0u8; 8];
             Format::Bc1.compress(
