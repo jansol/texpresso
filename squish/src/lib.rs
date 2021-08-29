@@ -33,7 +33,7 @@ mod math;
 
 use crate::colourfit::{ClusterFit, ColourFit, RangeFit, SingleColourFit};
 use crate::colourset::ColourSet;
-#[cfg(feature = "rayon")]
+#[cfg(feature="rayon")]
 use rayon::prelude::*;
 
 /// Defines a compression format
@@ -114,9 +114,9 @@ impl Format {
         let blocks_wide = num_blocks(width);
         let block_size = self.block_size();
 
-        #[cfg(feature = "rayon")]
+        #[cfg(feature="rayon")]
         let output_rows = output.par_chunks_mut(width * 4 * 4);
-        #[cfg(not(feature = "rayon"))]
+        #[cfg(not(feature="rayon"))]
         let output_rows = output.chunks_mut(width * 4 * 4);
 
         // loop over blocks
@@ -252,9 +252,9 @@ impl Format {
         let block_size = self.block_size();
         let blocks_wide = num_blocks(width);
 
-        #[cfg(feature = "rayon")]
+        #[cfg(feature="rayon")]
         let output_rows = output.par_chunks_mut(blocks_wide * block_size);
-        #[cfg(not(feature = "rayon"))]
+        #[cfg(not(feature="rayon"))]
         let output_rows = output.chunks_mut(blocks_wide * block_size);
 
         output_rows.enumerate().for_each(|(y, output_row)| {
