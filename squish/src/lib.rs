@@ -33,7 +33,7 @@ mod math;
 
 use crate::colourfit::{ClusterFit, ColourFit, RangeFit, SingleColourFit};
 use crate::colourset::ColourSet;
-#[cfg(feature="rayon")]
+#[cfg(feature = "rayon")]
 use rayon::prelude::*;
 
 /// Defines a compression format
@@ -114,9 +114,9 @@ impl Format {
         let blocks_wide = num_blocks(width);
         let block_size = self.block_size();
 
-        #[cfg(feature="rayon")]
+        #[cfg(feature = "rayon")]
         let output_rows = output.par_chunks_mut(width * 4 * 4);
-        #[cfg(not(feature="rayon"))]
+        #[cfg(not(feature = "rayon"))]
         let output_rows = output.chunks_mut(width * 4 * 4);
 
         // loop over blocks
@@ -252,9 +252,9 @@ impl Format {
         let block_size = self.block_size();
         let blocks_wide = num_blocks(width);
 
-        #[cfg(feature="rayon")]
+        #[cfg(feature = "rayon")]
         let output_rows = output.par_chunks_mut(blocks_wide * block_size);
-        #[cfg(not(feature="rayon"))]
+        #[cfg(not(feature = "rayon"))]
         let output_rows = output.chunks_mut(blocks_wide * block_size);
 
         output_rows.enumerate().for_each(|(y, output_row)| {
@@ -380,6 +380,62 @@ mod tests {
             );
             // BC1 data created with AMD Compressonator v4.1.5083
             let output_expected = [0x00, 0x00, 0xFF, 0xFF, 0x11, 0x68, 0x29, 0x44];
+            assert_eq!(output_actual, output_expected);
+        }
+
+        // all algorithms should result in the same expected output
+        test(Algorithm::ClusterFit);
+        test(Algorithm::RangeFit);
+        test(Algorithm::IterativeClusterFit);
+    }
+
+    // A colour test-pattern (RGB) with the first row in one colour,
+    // the second in another and the third and last row in a third colour.
+    static DECODED_BLOCK_COLOUR_4X4: &[u8] = &[
+        255, 150, 74, 255, 150, 74, 255, 150, 74, 255, 150, 74, // row 0
+        255, 120, 52, 255, 120, 52, 255, 120, 52, 255, 120, 52, // row 1
+        255, 105, 41, 255, 105, 41, 255, 105, 41, 255, 105, 41, // row 2
+        255, 105, 41, 255, 105, 41, 255, 105, 41, 255, 105, 41, // row 3
+    ];
+
+    // BC1 data created with AMD Compressonator v4.1.5083 and is the same as libsquish
+    static ENCODED_BLOCK_COLOUR_4X4: [u8; 8] = [0xA9, 0xFC, 0x45, 0xFB, 0x00, 0xFF, 0x55, 0x55];
+
+    fn decoded_block_colour_4x4_as_rgba() -> [u8; 4 * 4 * 4] {
+        let mut output = [0u8; 4 * 4 * 4];
+        for i in 0..4 * 4 {
+            output[i * 4 + 0] = DECODED_BLOCK_COLOUR_4X4[i * 3 + 0]; // R
+            output[i * 4 + 1] = DECODED_BLOCK_COLOUR_4X4[i * 3 + 1]; // G
+            output[i * 4 + 2] = DECODED_BLOCK_COLOUR_4X4[i * 3 + 2]; // B
+            output[i * 4 + 3] = 0xFF; //A
+        }
+        output
+    }
+
+    #[test]
+    fn test_bc1_decompression_colour() {
+        let encoded: [u8; 8] = ENCODED_BLOCK_COLOUR_4X4;
+        let mut output_actual = [0u8; 4 * 4 * 4];
+        Format::Bc1.decompress(&encoded, 4, 4, &mut output_actual);
+        assert_eq!(output_actual, decoded_block_colour_4x4_as_rgba());
+    }
+
+    #[test]
+    fn test_bc1_compression_colour_cluster_fit() {
+        fn test(algorithm: Algorithm) {
+            let mut output_actual = [0u8; 8];
+            Format::Bc1.compress(
+                &decoded_block_colour_4x4_as_rgba(),
+                4,
+                4,
+                Params {
+                    algorithm,
+                    weights: COLOUR_WEIGHTS_UNIFORM,
+                    weigh_colour_by_alpha: false,
+                },
+                &mut output_actual,
+            );
+            let output_expected = ENCODED_BLOCK_COLOUR_4X4;
             assert_eq!(output_actual, output_expected);
         }
 
