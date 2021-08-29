@@ -76,7 +76,7 @@ fn fix_range(min: &mut u8, max: &mut u8, steps: u8) {
     }
 }
 
-fn fit_codes(rgba: &[[u8; 4]; 16], mask: u32, codes: [u8; 8], indices: &mut [u8; 16]) -> u32 {
+fn fit_codes(rgba: &[[u8; 4]; 16], channel: usize, mask: u32, codes: [u8; 8], indices: &mut [u8; 16]) -> u32 {
     let mut err = 0;
 
     // fit each alpha value to the codebook
@@ -89,7 +89,7 @@ fn fit_codes(rgba: &[[u8; 4]; 16], mask: u32, codes: [u8; 8], indices: &mut [u8;
             continue;
         }
 
-        let value = rgba[i][3];
+        let value = rgba[i][channel];
         let mut least = u32::MAX;
         let mut index = 0;
         for (j, &code) in codes.iter().enumerate().take(8) {
@@ -178,7 +178,7 @@ fn write_alpha_block7(alpha0: u8, alpha1: u8, indices: &[u8; 16], block: &mut [u
     }
 }
 
-pub fn compress_bc3(rgba: &[[u8; 4]; 16], mask: u32, block: &mut [u8]) {
+pub fn compress_bc3(rgba: &[[u8; 4]; 16], channel: usize, mask: u32, block: &mut [u8]) {
     // get range for 5-alpha and 7-alpha interpolation
     let mut min5 = u8::MAX;
     let mut max5 = 0u8;
@@ -193,7 +193,7 @@ pub fn compress_bc3(rgba: &[[u8; 4]; 16], mask: u32, block: &mut [u8]) {
         }
 
         // incorporate into the min/max
-        let value = pixel[3];
+        let value = pixel[channel];
         min7 = min7.min(value);
         max7 = max7.max(value);
 
@@ -238,8 +238,8 @@ pub fn compress_bc3(rgba: &[[u8; 4]; 16], mask: u32, block: &mut [u8]) {
     // fit the data to both codebooks
     let mut indices5 = [0u8; 16];
     let mut indices7 = [0u8; 16];
-    let err5 = fit_codes(rgba, mask, codes5, &mut indices5);
-    let err7 = fit_codes(rgba, mask, codes7, &mut indices7);
+    let err5 = fit_codes(rgba, channel, mask, codes5, &mut indices5);
+    let err7 = fit_codes(rgba, channel, mask, codes7, &mut indices7);
 
     // save the block with the least error
     if err5 <= err7 {
@@ -249,7 +249,7 @@ pub fn compress_bc3(rgba: &[[u8; 4]; 16], mask: u32, block: &mut [u8]) {
     }
 }
 
-pub fn decompress_bc3(rgba: &mut [[u8; 4]; 16], bytes: &[u8]) {
+pub fn decompress_bc3(rgba: &mut [[u8; 4]; 16], channel: usize, bytes: &[u8]) {
     assert!(bytes.len() == 8);
 
     // get endpoint values
@@ -293,6 +293,6 @@ pub fn decompress_bc3(rgba: &mut [[u8; 4]; 16], bytes: &[u8]) {
 
     // write out the indexed codebook values
     for (pixel, &index) in rgba.iter_mut().zip(indices.iter()) {
-        pixel[3] = codes[index as usize];
+        pixel[channel] = codes[index as usize];
     }
 }
