@@ -33,6 +33,7 @@ pub struct Sym3x3 {
     x: [f32; 6],
 }
 
+/// Symmetric eigensystem solver algorithm from http://www.geometrictools.com/Documentation/EigenSymmetric3x3.pdf
 impl Sym3x3 {
     pub fn new(s: f32) -> Self {
         Self {
