@@ -76,8 +76,8 @@ impl Sym3x3 {
         const POWER_ITERATION_COUNT: usize = 8;
 
         let row0 = Vec4::new(self.x[0], self.x[1], self.x[2], 0.0);
-        let row1 = Vec4::new(self.x[0], self.x[1], self.x[2], 0.0);
-        let row2 = Vec4::new(self.x[0], self.x[1], self.x[2], 0.0);
+        let row1 = Vec4::new(self.x[1], self.x[3], self.x[4], 0.0);
+        let row2 = Vec4::new(self.x[2], self.x[4], self.x[5], 0.0);
         let mut v = Vec4::new(1.0, 1.0, 1.0, 1.0);
 
         for _ in 0..POWER_ITERATION_COUNT {
