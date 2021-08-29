@@ -20,10 +20,10 @@ path = "src/main.rs"
 doc = false
 
 [dependencies]
-ddsfile = "0.2.3"
-jpeg-decoder = "0.1.15"
-png = "0.15.0"
-structopt = "0.3.2"
+ddsfile = "0.4.0"
+jpeg-decoder = "0.1.18"
+png = "0.17.0"
+structopt = "0.3.7"
 
 [features]
 rayon = ["squish/rayon"]
@@ -32,4 +32,3 @@ default = ["rayon"]
 [dependencies.squish]
 path = "../squish"
 version = "1.0"
-

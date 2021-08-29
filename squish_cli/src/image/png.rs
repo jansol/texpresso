@@ -23,27 +23,29 @@ use std::fs::File;
 use std::io::BufWriter;
 use std::path::Path;
 
-use png::{BitDepth, ColorType, Decoder, Encoder, Transformations};
+use png::{BitDepth, ColorType, Transformations};
 
 use super::RawImage;
 
 pub fn read(path: &Path) -> RawImage {
     let file = File::open(path).expect("Failed to open file");
-    let mut decoder = Decoder::new(file);
+    let mut decoder = png::Decoder::new(file);
     decoder.set_transformations(Transformations::EXPAND);
 
-    let (info, mut reader) = decoder
+    let mut reader = decoder
         .read_info()
         .expect("Failed to read PNG header. Is this really a PNG file?");
-    if info.bit_depth != BitDepth::Eight {
-        panic!("Only images with 8 bits per channel are supported");
-    }
 
     // Preallocate the output buffer.
-    let mut buf = vec![0; info.buffer_size()];
+    let mut buf = vec![0; reader.output_buffer_size()];
 
     // Read the next frame. Currently this function should only called once.
     reader.next_frame(&mut buf).unwrap();
+
+    let info = reader.info();
+    if info.bit_depth != BitDepth::Eight {
+        panic!("Only images with 8 bits per channel are supported");
+    }
 
     // expand to rgba
     buf = match info.color_type {
@@ -55,11 +57,11 @@ pub fn read(path: &Path) -> RawImage {
             .chunks(2)
             .flat_map(|rg| vec![rg[0], rg[0], rg[0], rg[1]])
             .collect::<Vec<u8>>(),
-        ColorType::RGB => buf[..]
+        ColorType::Rgb => buf[..]
             .chunks(3)
             .flat_map(|rgb| vec![rgb[0], rgb[1], rgb[2], 255])
             .collect::<Vec<u8>>(),
-        ColorType::RGBA => buf,
+        ColorType::Rgba => buf,
         _ => unreachable!(),
     };
 
@@ -74,8 +76,8 @@ pub fn write(path: &Path, width: u32, height: u32, data: &[u8]) {
     let file = File::create(path).expect("Unable to create file");
     let w = &mut BufWriter::new(file);
 
-    let mut encoder = Encoder::new(w, width, height);
-    encoder.set_color(ColorType::RGBA);
+    let mut encoder = png::Encoder::new(w, width, height);
+    encoder.set_color(ColorType::Rgba);
     encoder.set_depth(BitDepth::Eight);
     let mut writer = encoder.write_header().unwrap();
 
