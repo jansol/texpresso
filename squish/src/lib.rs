@@ -299,39 +299,13 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_storage_requirements_bc1_exact() {
-        let estimate = Format::Bc1.compressed_size(16, 32);
-        assert_eq!(estimate, 256);
-    }
-
-    #[test]
-    fn test_storage_requirements_bc1_padded() {
-        let estimate = Format::Bc1.compressed_size(15, 30);
-        assert_eq!(estimate, 256);
-    }
-
-    #[test]
-    fn test_storage_requirements_bc2_exact() {
-        let estimate = Format::Bc2.compressed_size(16, 32);
-        assert_eq!(estimate, 512);
-    }
-
-    #[test]
-    fn test_storage_requirements_bc2_padded() {
-        let estimate = Format::Bc2.compressed_size(15, 30);
-        assert_eq!(estimate, 512);
-    }
-
-    #[test]
-    fn test_storage_requirements_bc3_exact() {
-        let estimate = Format::Bc3.compressed_size(16, 32);
-        assert_eq!(estimate, 512);
-    }
-
-    #[test]
-    fn test_storage_requirements_bc3_padded() {
-        let estimate = Format::Bc3.compressed_size(15, 30);
-        assert_eq!(estimate, 512);
+    fn test_storage_requirements() {
+        assert_eq!(Format::Bc1.compressed_size(16, 32), 256);
+        assert_eq!(Format::Bc1.compressed_size(15, 32), 256);
+        assert_eq!(Format::Bc2.compressed_size(16, 32), 512);
+        assert_eq!(Format::Bc2.compressed_size(15, 32), 512);
+        assert_eq!(Format::Bc3.compressed_size(16, 32), 512);
+        assert_eq!(Format::Bc3.compressed_size(15, 32), 512);
     }
 
     // The test-pattern is a gray-scale checkerboard of size 4x4 with 0xFF in the top-left.
