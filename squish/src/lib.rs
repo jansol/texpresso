@@ -468,4 +468,43 @@ mod tests {
         test(Algorithm::RangeFit);
         test(Algorithm::IterativeClusterFit);
     }
+
+    // Same as ENCODED_BLOCK_COLOUR_4X4, but with fully opaque BC2 alpha channel.
+    static ENCODED_BC2_BLOCK_ALPHA_4X4: [u8; 16] = [
+        0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, // Alpha
+        0xA9, 0xFC, 0x45, 0xFB, 0x00, 0xFF, 0x55, 0x55, // RGB block
+    ];
+
+    #[test]
+    fn test_bc2_decompression_colour() {
+        let encoded: [u8; 16] = ENCODED_BC2_BLOCK_ALPHA_4X4;
+        let mut output_actual = [0u8; 4 * 4 * 4];
+        Format::Bc2.decompress(&encoded, 4, 4, &mut output_actual);
+        assert_eq!(output_actual, decoded_block_colour_4x4_as_rgba());
+    }
+
+    #[test]
+    fn test_bc2_compression_colour() {
+        fn test(algorithm: Algorithm) {
+            let mut output_actual = [0u8; 16];
+            Format::Bc2.compress(
+                &decoded_block_colour_4x4_as_rgba(),
+                4,
+                4,
+                Params {
+                    algorithm,
+                    weights: COLOUR_WEIGHTS_UNIFORM,
+                    weigh_colour_by_alpha: false,
+                },
+                &mut output_actual,
+            );
+            let output_expected = ENCODED_BC2_BLOCK_ALPHA_4X4;
+            assert_eq!(output_actual, output_expected);
+        }
+
+        // all algorithms should result in the same expected output
+        test(Algorithm::ClusterFit);
+        test(Algorithm::RangeFit);
+        test(Algorithm::IterativeClusterFit);
+    }
 }
