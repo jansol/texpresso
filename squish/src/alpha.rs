@@ -63,7 +63,7 @@ pub fn decompress_bc2(rgba: &mut [[u8; 4]; 16], bytes: &[u8]) {
 
         // convert back up to bytes
         rgba[2 * i][3] = lo | (lo << 4);
-        rgba[2 * i + 1][3] = hi | (hi << 4);
+        rgba[2 * i + 1][3] = hi | (hi >> 4);
     }
 }
 
