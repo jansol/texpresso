@@ -181,8 +181,7 @@ impl<'a> ColourFitImpl<'a> for ClusterFit<'a> {
             let mut part0 = zero;
             for i in 0..count {
                 // second cluster [i,j) is halfway along
-                let mut part1 =
-                    if i == 0 { self.points_weights[0] } else { zero };
+                let mut part1 = if i == 0 { self.points_weights[0] } else { zero };
                 let jmin = if i == 0 { 1 } else { i };
 
                 for j in jmin..=count {
@@ -313,11 +312,7 @@ impl<'a> ColourFitImpl<'a> for ClusterFit<'a> {
 
                 for j in i..=count {
                     // third cluster [j, k) is two thirds along
-                    let mut part2 = if j == 0 {
-                        self.points_weights[0]
-                    } else {
-                        zero
-                    };
+                    let mut part2 = if j == 0 { self.points_weights[0] } else { zero };
                     let kmin = if j == 0 { 1 } else { j };
 
                     for k in kmin..=count {

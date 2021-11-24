@@ -147,7 +147,8 @@ fn compress_file(outfile: Option<PathBuf>, infile: &Path, format: Format, params
         false, // is_cubemap
         D3D10ResourceDimension::Texture2D,
         alphamode,
-    ).unwrap();
+    )
+    .unwrap();
     dds.data = buf;
 
     let mut outfile = File::create(outfile).expect("Failed to create output file");
@@ -245,6 +246,6 @@ fn parse_format(s: &str) -> Result<Format, &'static str> {
         "bc3" => Ok(Format::Bc3),
         "bc4" => Ok(Format::Bc4),
         "bc5" => Ok(Format::Bc5),
-        _ => Err("invalid compression format specifier")
+        _ => Err("invalid compression format specifier"),
     }
 }

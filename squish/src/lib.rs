@@ -33,7 +33,7 @@ mod math;
 
 use crate::colourfit::{ClusterFit, ColourFit, RangeFit, SingleColourFit};
 use crate::colourset::ColourSet;
-#[cfg(feature="rayon")]
+#[cfg(feature = "rayon")]
 use rayon::prelude::*;
 
 /// Defines a compression format
@@ -126,9 +126,9 @@ impl Format {
         let blocks_wide = num_blocks(width);
         let block_size = self.block_size();
 
-        #[cfg(feature="rayon")]
+        #[cfg(feature = "rayon")]
         let output_rows = output.par_chunks_mut(width * 4 * 4);
-        #[cfg(not(feature="rayon"))]
+        #[cfg(not(feature = "rayon"))]
         let output_rows = output.chunks_mut(width * 4 * 4);
 
         // loop over blocks
@@ -195,14 +195,14 @@ impl Format {
     ) {
         // compress alpha block(s)
         match self {
-            Format::Bc1 => {},
+            Format::Bc1 => {}
             Format::Bc2 => alpha::compress_bc2(&rgba, mask, &mut output[..8]),
             Format::Bc3 => alpha::compress_bc3(&rgba, 3, mask, &mut output[..8]),
             Format::Bc4 => alpha::compress_bc3(&rgba, 0, mask, &mut output[..8]),
             Format::Bc5 => {
                 alpha::compress_bc3(&rgba, 0, mask, &mut output[0..8]);
                 alpha::compress_bc3(&rgba, 1, mask, &mut output[8..16]);
-            },
+            }
         }
 
         // compress colour block if the format has one
@@ -229,8 +229,8 @@ impl Format {
                     let mut fit = ClusterFit::new(&colours, self, params.weights, iterate);
                     fit.compress(colour_block);
                 }
-            },
-            Format::Bc4 | Format::Bc5 => {},
+            }
+            Format::Bc4 | Format::Bc5 => {}
         }
     }
 
@@ -249,10 +249,10 @@ impl Format {
 
                 // decompress colour block
                 rgba = colourblock::decompress(colour_block, self == Format::Bc1);
-            },
+            }
             _ => {
                 rgba = [[0, 0, 0, 0xFF]; 16];
-            },
+            }
         }
 
         // decompress alpha block(s)
@@ -267,11 +267,11 @@ impl Format {
                     pixel[1] = pixel[0];
                     pixel[2] = pixel[0];
                 }
-            },
+            }
             Format::Bc5 => {
                 alpha::decompress_bc3(&mut rgba, 0, &block[..8]);
                 alpha::decompress_bc3(&mut rgba, 1, &block[8..16]);
-            },
+            }
         }
 
         rgba
@@ -298,9 +298,9 @@ impl Format {
         let block_size = self.block_size();
         let blocks_wide = num_blocks(width);
 
-        #[cfg(feature="rayon")]
+        #[cfg(feature = "rayon")]
         let output_rows = output.par_chunks_mut(blocks_wide * block_size);
-        #[cfg(not(feature="rayon"))]
+        #[cfg(not(feature = "rayon"))]
         let output_rows = output.chunks_mut(blocks_wide * block_size);
 
         output_rows.enumerate().for_each(|(y, output_row)| {

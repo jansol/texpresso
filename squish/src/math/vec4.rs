@@ -104,7 +104,7 @@ impl Vec4 {
             libm::truncf(self.x),
             libm::truncf(self.y),
             libm::truncf(self.z),
-            libm::truncf(self.w)
+            libm::truncf(self.w),
         )
     }
 }

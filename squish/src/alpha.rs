@@ -76,7 +76,13 @@ fn fix_range(min: &mut u8, max: &mut u8, steps: u8) {
     }
 }
 
-fn fit_codes(rgba: &[[u8; 4]; 16], channel: usize, mask: u32, codes: [u8; 8], indices: &mut [u8; 16]) -> u32 {
+fn fit_codes(
+    rgba: &[[u8; 4]; 16],
+    channel: usize,
+    mask: u32,
+    codes: [u8; 8],
+    indices: &mut [u8; 16],
+) -> u32 {
     let mut err = 0;
 
     // fit each alpha value to the codebook
