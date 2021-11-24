@@ -469,9 +469,19 @@ mod tests {
         test(Algorithm::IterativeClusterFit);
     }
 
-    // Same as ENCODED_BLOCK_COLOUR_4X4, but with fully opaque BC2 alpha channel.
+    // Same RGB colors as DECODED_BLOCK_COLOUR_4X4, with additional alpha channel.
+    // Alpha starts at 0x00, then increases by 0x11 for every pixel.
+    static DECODED_BLOCK_RGBA_4X4: &[u8] = &[
+        255, 150, 74, 0x00, 255, 150, 74, 0x11, 255, 150, 74, 0x22, 255, 150, 74, 0x33, // row 0
+        255, 120, 52, 0x44, 255, 120, 52, 0x55, 255, 120, 52, 0x66, 255, 120, 52, 0x77, // row 1
+        255, 105, 41, 0x88, 255, 105, 41, 0x99, 255, 105, 41, 0xAA, 255, 105, 41, 0xBB, // row 2
+        255, 105, 41, 0xCC, 255, 105, 41, 0xDD, 255, 105, 41, 0xEE, 255, 105, 41, 0xFF, // row 3
+    ];
+
+    // Combine the same alpha channel (BC2-compressed) with RGB from ENCODED_BLOCK_COLOUR_4X4.
+    // Alpha BC2 data created with GIMP DDS export.
     static ENCODED_BC2_BLOCK_ALPHA_4X4: [u8; 16] = [
-        0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, // Alpha
+        0x10, 0x32, 0x54, 0x76, 0x98, 0xBA, 0xDC, 0xFE, // Alpha
         0xA9, 0xFC, 0x45, 0xFB, 0x00, 0xFF, 0x55, 0x55, // RGB block
     ];
 
@@ -480,7 +490,8 @@ mod tests {
         let encoded: [u8; 16] = ENCODED_BC2_BLOCK_ALPHA_4X4;
         let mut output_actual = [0u8; 4 * 4 * 4];
         Format::Bc2.decompress(&encoded, 4, 4, &mut output_actual);
-        assert_eq!(output_actual, decoded_block_colour_4x4_as_rgba());
+        let output_expected = DECODED_BLOCK_RGBA_4X4;
+        assert_eq!(output_actual, output_expected);
     }
 
     #[test]
@@ -488,7 +499,7 @@ mod tests {
         fn test(algorithm: Algorithm) {
             let mut output_actual = [0u8; 16];
             Format::Bc2.compress(
-                &decoded_block_colour_4x4_as_rgba(),
+                &DECODED_BLOCK_RGBA_4X4,
                 4,
                 4,
                 Params {
