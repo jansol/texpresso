@@ -361,128 +361,75 @@ mod tests {
         assert_eq!(Format::Bc5.compressed_size(15, 32), 512);
     }
 
+    fn execute_decompression_test(format: Format, data: &test_data::TestDataSet) {
+        let mut output_actual = [0u8; 4 * 4 * 4];
+        format.decompress(data.encoded, 4, 4, &mut output_actual);
+        assert_eq!(output_actual, data.decoded);
+    }
+
+    fn execute_compression_test(format: Format, data: &test_data::TestDataSet) {
+        let test = |algorithm: Algorithm| {
+            // As no std is available, use a buffer of huge static size
+            // and slice it into the dynamic size of the format.
+            let mut output_buffer = [0u8; 128];
+            let mut output_actual: &mut [u8] = &mut output_buffer[0..format.block_size()];
+            format.compress(
+                data.decoded,
+                4,
+                4,
+                Params {
+                    algorithm,
+                    weights: COLOUR_WEIGHTS_UNIFORM,
+                    weigh_colour_by_alpha: false,
+                },
+                &mut output_actual,
+            );
+            assert_eq!(output_actual, data.encoded);
+        };
+
+        // all algorithms should result in the same expected output
+        test(Algorithm::ClusterFit);
+        test(Algorithm::RangeFit);
+        test(Algorithm::IterativeClusterFit);
+    }
+
     #[test]
     fn test_bc1_decompression_gray() {
-        // BC1 data created with AMD Compressonator v4.1.5083
-        let mut output_actual = [0u8; 4 * 4 * 4];
-        Format::Bc1.decompress(&test_data::BC1_GRAY.encoded, 4, 4, &mut output_actual);
-        assert_eq!(output_actual, test_data::BC1_GRAY.decoded);
+        execute_decompression_test(Format::Bc1, &test_data::BC1_GRAY);
     }
 
     #[test]
     fn test_bc1_compression_gray() {
-        fn test(algorithm: Algorithm) {
-            let mut output_actual = [0u8; 8];
-            Format::Bc1.compress(
-                &test_data::BC1_GRAY.decoded,
-                4,
-                4,
-                Params {
-                    algorithm,
-                    weights: COLOUR_WEIGHTS_UNIFORM,
-                    weigh_colour_by_alpha: false,
-                },
-                &mut output_actual,
-            );
-            assert_eq!(output_actual, test_data::BC1_GRAY.encoded);
-        }
-
-        // all algorithms should result in the same expected output
-        test(Algorithm::ClusterFit);
-        test(Algorithm::RangeFit);
-        test(Algorithm::IterativeClusterFit);
+        execute_compression_test(Format::Bc1, &test_data::BC1_GRAY);
     }
 
     #[test]
     fn test_bc1_decompression_colour() {
-        let mut output_actual = [0u8; 4 * 4 * 4];
-        Format::Bc1.decompress(test_data::BC1_COLOUR.encoded, 4, 4, &mut output_actual);
-        assert_eq!(output_actual, test_data::BC1_COLOUR.decoded);
+        execute_decompression_test(Format::Bc1, &test_data::BC1_COLOUR);
     }
 
     #[test]
     fn test_bc1_compression_colour() {
-        fn test(algorithm: Algorithm) {
-            let mut output_actual = [0u8; 8];
-            Format::Bc1.compress(
-                test_data::BC1_COLOUR.decoded,
-                4,
-                4,
-                Params {
-                    algorithm,
-                    weights: COLOUR_WEIGHTS_UNIFORM,
-                    weigh_colour_by_alpha: false,
-                },
-                &mut output_actual,
-            );
-            assert_eq!(output_actual, test_data::BC1_COLOUR.encoded);
-        }
-
-        // all algorithms should result in the same expected output
-        test(Algorithm::ClusterFit);
-        test(Algorithm::RangeFit);
-        test(Algorithm::IterativeClusterFit);
+        execute_compression_test(Format::Bc1, &test_data::BC1_COLOUR);
     }
 
     #[test]
     fn test_bc2_decompression_gray() {
-        let mut output_actual = [0u8; 4 * 4 * 4];
-        Format::Bc2.decompress(test_data::BC2_GRAY.encoded, 4, 4, &mut output_actual);
-        assert_eq!(output_actual, test_data::BC2_GRAY.decoded);
+        execute_decompression_test(Format::Bc2, &test_data::BC2_GRAY);
     }
 
     #[test]
     fn test_bc2_compression_gray() {
-        fn test(algorithm: Algorithm) {
-            let mut output_actual = [0u8; 16];
-            Format::Bc2.compress(
-                test_data::BC2_GRAY.decoded,
-                4,
-                4,
-                Params {
-                    algorithm,
-                    weights: COLOUR_WEIGHTS_UNIFORM,
-                    weigh_colour_by_alpha: false,
-                },
-                &mut output_actual,
-            );
-            assert_eq!(output_actual, test_data::BC2_GRAY.encoded);
-        }
-
-        // all algorithms should result in the same expected output
-        test(Algorithm::ClusterFit);
-        test(Algorithm::RangeFit);
-        test(Algorithm::IterativeClusterFit);
+        execute_compression_test(Format::Bc2, &test_data::BC2_GRAY);
     }
 
     #[test]
     fn test_bc2_decompression_colour() {
-        let mut output_actual = [0u8; 4 * 4 * 4];
-        Format::Bc2.decompress(test_data::BC2_COLOUR.encoded, 4, 4, &mut output_actual);
-        assert_eq!(output_actual, test_data::BC2_COLOUR.decoded);
+        execute_decompression_test(Format::Bc2, &test_data::BC2_COLOUR);
     }
 
     #[test]
     fn test_bc2_compression_colour() {
-        fn test(algorithm: Algorithm) {
-            let mut output_actual = [0u8; 16];
-            Format::Bc2.compress(
-                test_data::BC2_COLOUR.decoded,
-                4,
-                4,
-                Params {
-                    algorithm,
-                    weights: COLOUR_WEIGHTS_UNIFORM,
-                    weigh_colour_by_alpha: false,
-                },
-                &mut output_actual,
-            );
-            assert_eq!(output_actual, test_data::BC2_COLOUR.encoded);
-        }
-
-        // all algorithms should result in the same expected output
-        test(Algorithm::ClusterFit);
-        test(Algorithm::RangeFit);
-        test(Algorithm::IterativeClusterFit);
+        execute_compression_test(Format::Bc2, &test_data::BC2_COLOUR);
     }
 }
