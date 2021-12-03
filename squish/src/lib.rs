@@ -462,4 +462,14 @@ mod tests {
     fn test_bc4_compression_gray() {
         execute_compression_test(Format::Bc4, &test_data::BC4_GRAY);
     }
+
+    #[test]
+    fn test_bc5_decompression_gray() {
+        execute_decompression_test(Format::Bc5, &test_data::BC5_GRAY);
+    }
+
+    #[test]
+    fn test_bc5_compression_gray() {
+        execute_compression_test(Format::Bc5, &test_data::BC5_GRAY);
+    }
 }
