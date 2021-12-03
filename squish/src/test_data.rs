@@ -3,6 +3,7 @@
 //! Currently two patterns are used: `GRAY` and `COLOUR`.
 
 /// A data set for testing holds the encoded and decoded values for a single 4x4 block of pixels.
+#[derive(Debug)]
 pub struct TestDataSet {
     pub encoded: &'static [u8],
     pub decoded: &'static [u8],
@@ -74,6 +75,34 @@ pub const BC2_COLOUR: TestDataSet = TestDataSet {
     decoded: &add_alpha_ramp_to_rgb(&COLOUR_BLOCK_RGB),
 };
 
+/// Internal data set for storing 16 alpha values from 8 bytes of BC3 alpha encoding.
+const BC3_ALPHA_DECODED: [u8; 4 * 4] = [
+    0x00, 0x24, 0x48, 0x6D, // row 0
+    0x91, 0xB6, 0xDB, 0xFF, // row 1
+    0x00, 0x24, 0x48, 0x6D, // row 2
+    0x91, 0xB6, 0xDB, 0xFF, // row 3
+];
+
+/// The same test pattern as BC2_GRAY, but with with 255/7 steps in the alpha values.
+/// Note that the alpha values are rounded down.
+pub const BC3_GRAY: TestDataSet = TestDataSet {
+    encoded: &[
+        0x24, 0xDB, 0x86, 0xC6, 0xE6, 0x86, 0xC6, 0xE6, // Alpha
+        0xFF, 0xFF, 0x00, 0x00, 0x44, 0x3D, 0x7C, 0x11, // Colour
+    ],
+    decoded: &add_custom_alpha_to_rgb(&expand_single_to_rgb(&GRAY_BLOCK_LUMA), &BC3_ALPHA_DECODED),
+};
+
+/// The same test pattern as BC2_COLOUR, but with 255/7 steps in the alpha values.
+/// Note that the alpha values are rounded down.
+pub const BC3_COLOUR: TestDataSet = TestDataSet {
+    encoded: &[
+        0x24, 0xDB, 0x86, 0xC6, 0xE6, 0x86, 0xC6, 0xE6, // Alpha
+        0xA9, 0xFC, 0x45, 0xFB, 0x00, 0xFF, 0x55, 0x55, // Colour
+    ],
+    decoded: &add_custom_alpha_to_rgb(&COLOUR_BLOCK_RGB, &BC3_ALPHA_DECODED),
+};
+
 /// Expands an array with a single value per pixel to an array with this value expanded
 /// into the RGB channels and A set to 0xFF.
 const fn expand_single_to_rgb(input: &[u8; 4 * 4]) -> [u8; 4 * 4 * 3] {
@@ -108,7 +137,7 @@ const fn add_alpha_to_rgb(input: &[u8; 4 * 4 * 3], alpha: u8) -> [u8; 4 * 4 * 4]
 /// The step size is therefore 0x11.
 const fn add_alpha_ramp_to_rgb(input: &[u8; 4 * 4 * 3]) -> [u8; 4 * 4 * 4] {
     let mut output = [0u8; 4 * 4 * 4];
-    let mut i: usize = 0;
+    let mut i = 0;
     let mut alpha: usize = 0x00;
     // for loops are not available in const functions at the time of writing
     while i < 4 * 4 {
@@ -118,6 +147,25 @@ const fn add_alpha_ramp_to_rgb(input: &[u8; 4 * 4 * 3]) -> [u8; 4 * 4 * 4] {
         output[i * 4 + 3] = alpha as u8; //A
         i += 1;
         alpha += 0x11;
+    }
+    output
+}
+
+/// Appends a list of 16 alpha values to the RGB values.
+/// I.e. each RGB is extended to RGBA with the alpha value from the list.
+const fn add_custom_alpha_to_rgb(
+    input: &[u8; 4 * 4 * 3],
+    alpha_values: &[u8; 4 * 4],
+) -> [u8; 4 * 4 * 4] {
+    let mut output = [0u8; 4 * 4 * 4];
+    let mut i = 0;
+    // for loops are not available in const functions at the time of writing
+    while i < 4 * 4 {
+        output[i * 4 + 0] = input[i * 3 + 0]; // R
+        output[i * 4 + 1] = input[i * 3 + 1]; // G
+        output[i * 4 + 2] = input[i * 3 + 2]; // B
+        output[i * 4 + 3] = alpha_values[i]; //A
+        i += 1;
     }
     output
 }

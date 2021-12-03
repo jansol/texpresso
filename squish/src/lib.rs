@@ -432,4 +432,24 @@ mod tests {
     fn test_bc2_compression_colour() {
         execute_compression_test(Format::Bc2, &test_data::BC2_COLOUR);
     }
+
+    #[test]
+    fn test_bc3_decompression_gray() {
+        execute_decompression_test(Format::Bc3, &test_data::BC3_GRAY);
+    }
+
+    #[test]
+    fn test_bc3_compression_gray() {
+        execute_compression_test(Format::Bc3, &test_data::BC3_GRAY);
+    }
+
+    #[test]
+    fn test_bc3_decompression_colour() {
+        execute_decompression_test(Format::Bc3, &test_data::BC3_COLOUR);
+    }
+
+    #[test]
+    fn test_bc3_compression_colour() {
+        execute_compression_test(Format::Bc3, &test_data::BC3_COLOUR);
+    }
 }
