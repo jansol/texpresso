@@ -263,7 +263,7 @@ impl Format {
             Format::Bc4 => {
                 alpha::decompress_bc3(&mut rgba, 0, &block[..8]);
                 // splat decompressed value into g and b channels
-                for ref mut pixel in rgba {
+                for pixel in &mut rgba {
                     pixel[1] = pixel[0];
                     pixel[2] = pixel[0];
                 }
@@ -451,5 +451,15 @@ mod tests {
     #[test]
     fn test_bc3_compression_colour() {
         execute_compression_test(Format::Bc3, &test_data::BC3_COLOUR);
+    }
+
+    #[test]
+    fn test_bc4_decompression_gray() {
+        execute_decompression_test(Format::Bc4, &test_data::BC4_GRAY);
+    }
+
+    #[test]
+    fn test_bc4_compression_gray() {
+        execute_compression_test(Format::Bc4, &test_data::BC4_GRAY);
     }
 }

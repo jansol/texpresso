@@ -103,8 +103,22 @@ pub const BC3_COLOUR: TestDataSet = TestDataSet {
     decoded: &add_custom_alpha_to_rgb(&COLOUR_BLOCK_RGB, &BC3_ALPHA_DECODED),
 };
 
+/// The BC1_GRAY test pattern, but with ?? as the middle gray.
+pub const BC4_GRAY: TestDataSet = TestDataSet {
+    encoded: &[0x7F, 0x84, 0xF7, 0x6D, 0xE0, 0x07, 0xEC, 0xFB],
+    decoded: &add_alpha_to_rgb(
+        &expand_single_to_rgb(&[
+            0xFF, 0x00, 0xFF, 0x00, // row 0
+            0x00, 0x7F, 0x7F, 0xFF, // row 1
+            0xFF, 0x7F, 0x7F, 0x00, // row 2
+            0x00, 0xFF, 0x00, 0xFF, // row 3
+        ]),
+        0xFF,
+    ),
+};
+
 /// Expands an array with a single value per pixel to an array with this value expanded
-/// into the RGB channels and A set to 0xFF.
+/// into the RGB channels.
 const fn expand_single_to_rgb(input: &[u8; 4 * 4]) -> [u8; 4 * 4 * 3] {
     let mut output = [0u8; 4 * 4 * 3];
     let mut i = 0;
