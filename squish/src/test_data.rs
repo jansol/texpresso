@@ -21,7 +21,7 @@ pub const BC1_GRAY: TestDataSet = TestDataSet {
             0xFF, 0x7F, 0x7F, 0x00, // row 2
             0x00, 0xFF, 0x00, 0xFF, // row 3
         ]),
-        0xFF,
+        &[0xFF; 16],
     ),
 };
 
@@ -52,7 +52,7 @@ const GRAY_BLOCK_LUMA: [u8; 4 * 4] = [
 /// BC1 data created with AMD Compressonator v4.1.5083 and is the same as libsquish.
 pub const BC1_COLOUR: TestDataSet = TestDataSet {
     encoded: &[0xA9, 0xFC, 0x45, 0xFB, 0x00, 0xFF, 0x55, 0x55],
-    decoded: &add_alpha_to_rgb(&COLOUR_BLOCK_RGB, 0xFF),
+    decoded: &add_alpha_to_rgb(&COLOUR_BLOCK_RGB, &[0xFF; 16]),
 };
 
 /// A slightly different gray pattern to BC1_GRAY with a changed middle gray value.
@@ -62,7 +62,7 @@ pub const BC2_GRAY: TestDataSet = TestDataSet {
         0x10, 0x32, 0x54, 0x76, 0x98, 0xBA, 0xDC, 0xFE, // Alpha
         0xFF, 0xFF, 0x00, 0x00, 0x44, 0x3D, 0x7C, 0x11, // Colour
     ],
-    decoded: &add_alpha_ramp_to_rgb(&expand_single_to_rgb(&GRAY_BLOCK_LUMA)),
+    decoded: &add_alpha_to_rgb(&expand_single_to_rgb(&GRAY_BLOCK_LUMA), &LINEAR_RAMP),
 };
 
 /// The same test pattern as BC1_COLOUR, but with different alpha values.
@@ -72,7 +72,7 @@ pub const BC2_COLOUR: TestDataSet = TestDataSet {
         0x10, 0x32, 0x54, 0x76, 0x98, 0xBA, 0xDC, 0xFE, // Alpha
         0xA9, 0xFC, 0x45, 0xFB, 0x00, 0xFF, 0x55, 0x55, // Colour
     ],
-    decoded: &add_alpha_ramp_to_rgb(&COLOUR_BLOCK_RGB),
+    decoded: &add_alpha_to_rgb(&COLOUR_BLOCK_RGB, &LINEAR_RAMP),
 };
 
 /// Internal data set for storing 16 alpha values from 8 bytes of BC3 alpha encoding.
@@ -90,7 +90,7 @@ pub const BC3_GRAY: TestDataSet = TestDataSet {
         0x24, 0xDB, 0x86, 0xC6, 0xE6, 0x86, 0xC6, 0xE6, // Alpha
         0xFF, 0xFF, 0x00, 0x00, 0x44, 0x3D, 0x7C, 0x11, // Colour
     ],
-    decoded: &add_custom_alpha_to_rgb(&expand_single_to_rgb(&GRAY_BLOCK_LUMA), &BC3_ALPHA_DECODED),
+    decoded: &add_alpha_to_rgb(&expand_single_to_rgb(&GRAY_BLOCK_LUMA), &BC3_ALPHA_DECODED),
 };
 
 /// The same test pattern as BC2_COLOUR, but with 255/7 steps in the alpha values.
@@ -100,7 +100,7 @@ pub const BC3_COLOUR: TestDataSet = TestDataSet {
         0x24, 0xDB, 0x86, 0xC6, 0xE6, 0x86, 0xC6, 0xE6, // Alpha
         0xA9, 0xFC, 0x45, 0xFB, 0x00, 0xFF, 0x55, 0x55, // Colour
     ],
-    decoded: &add_custom_alpha_to_rgb(&COLOUR_BLOCK_RGB, &BC3_ALPHA_DECODED),
+    decoded: &add_alpha_to_rgb(&COLOUR_BLOCK_RGB, &BC3_ALPHA_DECODED),
 };
 
 /// The BC1_GRAY test pattern, but as BC4 with BC3 alpha encoding.
@@ -113,7 +113,7 @@ pub const BC4_GRAY: TestDataSet = TestDataSet {
             0xFF, 0x7F, 0x7F, 0x00, // row 2
             0x00, 0xFF, 0x00, 0xFF, // row 3
         ]),
-        0xFF,
+        &[0xFF; 16],
     ),
 };
 
@@ -130,7 +130,7 @@ pub const BC5_GRAY: TestDataSet = TestDataSet {
             0xFF, 0x00, 0x00, 0x7F, 0x7F, 0x00, 0x7F, 0x7F, 0x00, 0x00, 0xFF, 0x00, // row 2
             0x00, 0xFF, 0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0x00, // row 3
         ],
-        0xFF,
+        &[0xFF; 16],
     ),
 };
 
@@ -149,45 +149,15 @@ const fn expand_single_to_rgb(input: &[u8; 4 * 4]) -> [u8; 4 * 4 * 3] {
     output
 }
 
-/// Adds to the RGB data the alpha value and returns the resulting RGBA data.
-const fn add_alpha_to_rgb(input: &[u8; 4 * 4 * 3], alpha: u8) -> [u8; 4 * 4 * 4] {
-    let mut output = [0u8; 4 * 4 * 4];
-    let mut i = 0;
-    // for loops are not available in const functions at the time of writing
-    while i < 4 * 4 {
-        output[i * 4 + 0] = input[i * 3 + 0]; // R
-        output[i * 4 + 1] = input[i * 3 + 1]; // G
-        output[i * 4 + 2] = input[i * 3 + 2]; // B
-        output[i * 4 + 3] = alpha; //A
-        i += 1;
-    }
-    output
-}
-
-/// Creates a linear alpha ramp starting with the first pixel at 0x00 and ending at 0xFF.
-/// The step size is therefore 0x11.
-const fn add_alpha_ramp_to_rgb(input: &[u8; 4 * 4 * 3]) -> [u8; 4 * 4 * 4] {
-    let mut output = [0u8; 4 * 4 * 4];
-    let mut i = 0;
-    let mut alpha: usize = 0x00;
-    // for loops are not available in const functions at the time of writing
-    while i < 4 * 4 {
-        output[i * 4 + 0] = input[i * 3 + 0]; // R
-        output[i * 4 + 1] = input[i * 3 + 1]; // G
-        output[i * 4 + 2] = input[i * 3 + 2]; // B
-        output[i * 4 + 3] = alpha as u8; //A
-        i += 1;
-        alpha += 0x11;
-    }
-    output
-}
+/// Provides a linear value ramp with 16 entries, useful as alpha values.
+/// Starts at 0 and increases in 0x11 steps until 0xFF.
+const LINEAR_RAMP: [u8; 4 * 4] = [
+    0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF,
+];
 
 /// Appends a list of 16 alpha values to the RGB values.
 /// I.e. each RGB is extended to RGBA with the alpha value from the list.
-const fn add_custom_alpha_to_rgb(
-    input: &[u8; 4 * 4 * 3],
-    alpha_values: &[u8; 4 * 4],
-) -> [u8; 4 * 4 * 4] {
+const fn add_alpha_to_rgb(input: &[u8; 4 * 4 * 3], alpha_values: &[u8; 4 * 4]) -> [u8; 4 * 4 * 4] {
     let mut output = [0u8; 4 * 4 * 4];
     let mut i = 0;
     // for loops are not available in const functions at the time of writing
