@@ -26,7 +26,7 @@ use std::str::FromStr;
 
 use ddsfile::{AlphaMode, D3D10ResourceDimension, D3DFormat, Dds, DxgiFormat};
 use texpresso::{Algorithm, Format, Params, COLOUR_WEIGHTS_PERCEPTUAL};
-use structopt::StructOpt;
+use clap::Parser;
 
 mod image;
 
@@ -36,53 +36,53 @@ enum Profile {
     Quality,
 }
 
-#[derive(StructOpt)]
-#[structopt(name = "texpresso", about = "A texture compression suite")]
+#[derive(Parser)]
+#[clap(name = "texpresso", about = "A texture compression suite")]
 enum Opt {
     /// Compress a PNG or JPEG file to DDS
-    #[structopt(name = "compress")]
+    #[clap(name = "compress")]
     Compress {
         /// Output file (DDS)
-        #[structopt(short = "o", long = "output", parse(from_os_str))]
+        #[clap(short = 'o', long = "output", parse(from_os_str))]
         outfile: Option<PathBuf>,
 
         /// Input file (PNG, JPG)
-        #[structopt(name = "INFILE", parse(from_os_str))]
+        #[clap(name = "INFILE", parse(from_os_str))]
         infile: PathBuf,
 
         /// Compression format (BC1, BC2 or BC3)
-        #[structopt(short = "f", long = "format", parse(try_from_str = parse_format))]
+        #[clap(short = 'f', long = "format", parse(try_from_str = parse_format))]
         format: Format,
 
         /// Compressor profile (speed, balanced, quality).
-        #[structopt(short = "p", long = "profile", default_value = "Balanced")]
+        #[clap(short = 'p', long = "profile", default_value = "Balanced")]
         profile: Profile,
 
         /// Weigh colours by alpha while fitting. Can improve perceived quality in alpha-blended images.
-        #[structopt(long = "weigh-colour-by-alpha")]
+        #[clap(long = "weigh-colour-by-alpha")]
         weigh_colour_by_alpha: bool,
 
         // TODO: replace with something nicer
         /// Colour weights to be used for matching colours during fitting.
-        #[structopt(short = "w", long = "weights")]
+        #[clap(short = 'w', long = "weights")]
         weights: Vec<f32>,
     },
 
     /// Deompress a DDS file to PNG
-    #[structopt(name = "decompress")]
+    #[clap(name = "decompress")]
     Decompress {
         /// Output file (PNG)
-        #[structopt(short = "o", long = "output", parse(from_os_str))]
+        #[clap(short = 'o', long = "output", parse(from_os_str))]
         outfile: Option<PathBuf>,
 
         /// Input file (DDS)
-        #[structopt(name = "INFILE", parse(from_os_str))]
+        #[clap(name = "INFILE", parse(from_os_str))]
         infile: PathBuf,
     },
 }
 
 fn main() {
-    match Opt::from_args() {
+    match Opt::parse() {
         Opt::Compress {
             outfile,
             infile,
