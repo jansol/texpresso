@@ -16,9 +16,9 @@ path = "src/main.rs"
 doc = false
 
 [dependencies]
-ddsfile = "0.4.0"
-jpeg-decoder = "0.1.18"
-png = "0.17.0"
+ddsfile = "0.5"
+jpeg-decoder = "0.2"
+png = "0.17"
 clap = {version = "3", features = ["derive"]}
 
 [features]

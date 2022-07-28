@@ -46,7 +46,7 @@ pub fn read(path: &Path) -> RawImage {
             .chunks(3)
             .flat_map(|rgb| vec![rgb[0], rgb[1], rgb[2], 255u8])
             .collect::<Vec<u8>>(),
-        PixelFormat::CMYK32 => panic!("CMYK images are not supported!"),
+        x @ _ => panic!("JPEG files with format {:?} are not supported", x),
     };
 
     RawImage {

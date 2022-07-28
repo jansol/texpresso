@@ -136,19 +136,18 @@ fn compress_file(outfile: Option<PathBuf>, infile: &Path, format: Format, params
     } else {
         AlphaMode::Straight
     };
-    let mut dds = Dds::new_dxgi(
-        image.height as u32,
-        image.width as u32,
-        None, // depth
-        format_to_dxgiformat(format),
-        None,  // mipmap_levels
-        None,  // array_layers
-        None,  // caps2
-        false, // is_cubemap
-        D3D10ResourceDimension::Texture2D,
-        alphamode,
-    )
-    .unwrap();
+    let mut dds = Dds::new_dxgi( ddsfile::NewDxgiParams {
+        height: image.height as u32,
+        width: image.width as u32,
+        depth: None,
+        format: format_to_dxgiformat(format),
+        mipmap_levels: None,
+        array_layers: None,
+        caps2: None,
+        is_cubemap: false,
+        resource_dimension: D3D10ResourceDimension::Texture2D,
+        alpha_mode: alphamode
+    }).unwrap();
     dds.data = buf;
 
     let mut outfile = File::create(outfile).expect("Failed to create output file");
