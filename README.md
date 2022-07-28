@@ -3,8 +3,8 @@ A pure Rust texture compression suite
 This library started out as `squish-rs`, a pure rust port of Simon Brown's libsquish but was forked and renamed to avoid confusion as the API and format support is expanded beyond the original C++ library.
 
 # Crates in This Workspace
-* `texpresso` - The library itself
-* `texpresso_cli` - A command-line utility for compressing and decompressing textures. Also serves as a usage example for the library.
+* lib: `texpresso` - The library itself
+* cli: `texpresso_cli` - A command-line utility for compressing and decompressing textures, also serves as a usage example for the library. Note that the actual executable is also called 'texpresso'.
 
 # Roadmap
 ### Library
@@ -49,5 +49,5 @@ This library started out as `squish-rs`, a pure rust port of Simon Brown's libsq
 * Target platforms
   [ ] Support encoding on GPU via Vulkan
 * Maintenance
-  [ ] Migrate to clap 3
+  [x] Migrate to clap 3
 

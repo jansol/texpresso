@@ -7,7 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.0.0] - 2022-07-29
 ### Added
-- Fork from squish-rs in interest of keeping the original RIIR code easily accessible and preventing confusion about what this library is
+- Fork/rename from squish-rs in interest of keeping the original RIIR code easily accessible and preventing confusion about what this library is
+
+### Changed
+- Use clap for parsing CLI arguments
+- Update dependencies
+
+## [2.0.0-beta1] - 2021-11-16
+### Added
 - CHANGELOG file
 - Parallel compression of blocks
 - Support for BC4 and BC5 formats
