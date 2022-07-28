@@ -1,17 +1,17 @@
 [package]
-name = "squish"
-version = "2.0.0-beta1"
+name = "texpresso"
+version = "2.0.0"
 license = "MIT"
 authors = ["Jan Solanti <jhs@psonet.com>"]
 edition = "2021"
-description = "A pure Rust BC1/2/3 compressor and decompressor based on Simon Brown's libsquish"
-homepage = "https://github.com/jansol/squish-rs"
-repository = "https://github.com/jansol/squish-rs"
+description = "A pure Rust texture compression suite"
+homepage = "https://github.com/jansol/texpresso"
+repository = "https://github.com/jansol/texpresso"
 categories = ["compression", "multimedia::images", "multimedia::encoding", "no-std", "rendering::data-formats"]
 keywords = ["DDS", "DXT", "texture", "compression"]
 
 [badges]
-travis-ci = {repository = "jansol/squish-rs"}
+travis-ci = {repository = "jansol/texpresso"}
 
 [dependencies]
 libm = "0.2"

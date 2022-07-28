@@ -25,7 +25,7 @@ use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
 use ddsfile::{AlphaMode, D3D10ResourceDimension, D3DFormat, Dds, DxgiFormat};
-use squish::{Algorithm, Format, Params, COLOUR_WEIGHTS_PERCEPTUAL};
+use texpresso::{Algorithm, Format, Params, COLOUR_WEIGHTS_PERCEPTUAL};
 use structopt::StructOpt;
 
 mod image;
@@ -37,7 +37,7 @@ enum Profile {
 }
 
 #[derive(StructOpt)]
-#[structopt(name = "squish", about = "A BC1/2/3 compressor and decompressor")]
+#[structopt(name = "texpresso", about = "A texture compression suite")]
 enum Opt {
     /// Compress a PNG or JPEG file to DDS
     #[structopt(name = "compress")]

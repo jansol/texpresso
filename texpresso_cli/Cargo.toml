@@ -1,0 +1,30 @@
+[package]
+authors = ["Jan Solanti <jhs@psonet.com>"]
+license = "MIT"
+name = "texpresso_cli"
+version = "2.0.0"
+edition = "2021"
+description = "A commandline utility for compressing images to GPU-readable texture formats"
+homepage = "https://github.com/jansol/texpresso"
+repository = "https://github.com/jansol/texpresso"
+categories = ["compression", "game-engines", "multimedia::images", "multimedia::encoding", "rendering::data-formats"]
+keywords = ["DDS", "DXT", "texture", "compression"]
+
+[[bin]]
+name = "texpresso"
+path = "src/main.rs"
+doc = false
+
+[dependencies]
+ddsfile = "0.4.0"
+jpeg-decoder = "0.1.18"
+png = "0.17.0"
+structopt = "0.3.7"
+
+[features]
+rayon = ["texpresso/rayon"]
+default = ["rayon"]
+
+[dependencies.texpresso]
+path = "../texpresso"
+version = "2.0.0"

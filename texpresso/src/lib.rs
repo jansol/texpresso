@@ -20,8 +20,7 @@
 // TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 // SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-//! A pure Rust BC1/2/3 compressor and decompressor based on Simon Brown's
-//! **libsquish**
+//! A pure Rust texture compression suite
 
 #![no_std]
 
