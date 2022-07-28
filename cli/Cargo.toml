@@ -26,5 +26,5 @@ rayon = ["texpresso/rayon"]
 default = ["rayon"]
 
 [dependencies.texpresso]
-path = "../texpresso"
+path = "../lib"
 version = "2.0.0"
