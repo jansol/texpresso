@@ -1,6 +1,6 @@
 [package]
 name = "texpresso"
-version = "2.0.0"
+version = "2.0.1"
 license = "MIT"
 authors = ["Jan Solanti <jhs@psonet.com>"]
 edition = "2021"

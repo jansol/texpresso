@@ -2,7 +2,7 @@
 authors = ["Jan Solanti <jhs@psonet.com>"]
 license = "MIT"
 name = "texpresso_cli"
-version = "2.0.0"
+version = "2.0.1"
 edition = "2021"
 description = "A commandline utility for compressing images to GPU-readable texture formats"
 homepage = "https://github.com/jansol/texpresso"
@@ -27,4 +27,4 @@ default = ["rayon"]
 
 [dependencies.texpresso]
 path = "../lib"
-version = "2.0.0"
+version = "2.0.1"
