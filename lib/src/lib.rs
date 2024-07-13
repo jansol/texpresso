@@ -144,7 +144,7 @@ impl Format {
                         let sx = 4 * x + px;
                         let sy = py;
 
-                        if sx < width && sy < height {
+                        if sx < width && (4 * y + sy) < height {
                             for i in 0..4 {
                                 output_row[4 * (sx + sy * width) + i] = rgba[px + py * 4][i];
                             }
