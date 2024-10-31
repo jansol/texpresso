@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [unreleased]
+### Fixed
+- Decompression of images with a height greater than 1 block and not a multiple of block size
+
+
 ## [2.0.1] - 2022-07-29
 Hotfix rebase to bring in last changes from squish-rs
 ### Added
