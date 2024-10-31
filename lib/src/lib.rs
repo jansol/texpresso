@@ -413,6 +413,37 @@ mod tests {
     }
 
     #[test]
+    fn test_bc1_decompression_height_not_multiple_of_4() {
+        #[derive(Debug, PartialEq)]
+        struct Pixel<'a> {
+            x: usize,
+            y: usize,
+            data: &'a [u8],
+        }
+
+        let encoded = [
+            0x8E, 0x73, 0x71, 0x8C, 0xAA, 0xAA, 0xAA, 0xAA,
+            0x8E, 0x73, 0x71, 0x8C, 0xAA, 0xAA, 0xFF, 0xFF,
+        ];
+        let mut output = [0u8; 4 * 4 * 6];
+        Format::Bc1.decompress(&encoded, 4, 6, &mut output);
+        let mut pixel_n = 0;
+        const REFERENCE: [u8; 4] = [0x7F, 0x7F, 0x7F, 0xFF];
+        for pixel in output.chunks(4) {
+            let x = pixel_n % 4;
+            let y = pixel_n / 4;
+            let decoded = Pixel { x, y, data: pixel };
+            let expected = Pixel {
+                x,
+                y,
+                data: &REFERENCE,
+            };
+            assert_eq!(decoded, expected);
+            pixel_n += 1;
+        }
+    }
+
+    #[test]
     fn test_bc2_decompression_gray() {
         execute_decompression_test(Format::Bc2, &test_data::BC2_GRAY);
     }
