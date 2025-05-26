@@ -60,5 +60,4 @@ Target platforms
 * [ ] Support encoding on GPU via Vulkan
 
 Maintenance
-* [x] Migrate to clap 3
-
+* [x] Migrate to clap 4

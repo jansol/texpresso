@@ -30,7 +30,9 @@ use super::RawImage;
 pub fn read(path: &Path) -> RawImage {
     let file = File::open(path).expect("Failed to open file");
     let mut decoder = png::Decoder::new(file);
-    decoder.set_transformations(Transformations::EXPAND);
+    decoder.set_transformations(
+        Transformations::EXPAND | Transformations::ALPHA | Transformations::STRIP_16,
+    );
 
     let mut reader = decoder
         .read_info()
@@ -43,9 +45,6 @@ pub fn read(path: &Path) -> RawImage {
     reader.next_frame(&mut buf).unwrap();
 
     let info = reader.info();
-    if info.bit_depth != BitDepth::Eight {
-        panic!("Only images with 8 bits per channel are supported");
-    }
 
     // expand to rgba
     buf = match info.color_type {
@@ -62,7 +61,7 @@ pub fn read(path: &Path) -> RawImage {
             .flat_map(|rgb| vec![rgb[0], rgb[1], rgb[2], 255])
             .collect::<Vec<u8>>(),
         ColorType::Rgba => buf,
-        _ => unreachable!(),
+        ColorType::Indexed => buf,
     };
 
     RawImage {

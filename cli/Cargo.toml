@@ -17,9 +17,9 @@ doc = false
 
 [dependencies]
 ddsfile = "0.5"
-jpeg-decoder = "0.2"
+jpeg-decoder = "0.3"
 png = "0.17"
-clap = {version = "3", features = ["derive"]}
+clap = {version = "4", features = ["derive"]}
 
 [features]
 rayon = ["texpresso/rayon"]

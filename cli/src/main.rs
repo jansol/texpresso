@@ -22,61 +22,70 @@
 use std::ffi::OsStr;
 use std::fs::File;
 use std::path::{Path, PathBuf};
-use std::str::FromStr;
 
+use clap::{Parser, ValueEnum};
 use ddsfile::{AlphaMode, D3D10ResourceDimension, D3DFormat, Dds, DxgiFormat};
 use texpresso::{Algorithm, Format, Params, COLOUR_WEIGHTS_PERCEPTUAL};
-use clap::Parser;
 
 mod image;
 
+#[derive(Clone, ValueEnum)]
 enum Profile {
     Speed,
     Balanced,
     Quality,
 }
 
+#[derive(Clone, ValueEnum)]
+enum CliFormat {
+    Bc1,
+    Bc2,
+    Bc3,
+    Bc4,
+    Bc5,
+}
+
 #[derive(Parser)]
-#[clap(name = "texpresso", about = "A texture compression suite")]
+#[command(version, about)]
 enum Opt {
     /// Compress a PNG or JPEG file to DDS
-    #[clap(name = "compress")]
+    #[command(name = "compress")]
     Compress {
         /// Output file (DDS)
-        #[clap(short = 'o', long = "output", parse(from_os_str))]
+        #[arg(short = 'o', long = "output")]
         outfile: Option<PathBuf>,
 
         /// Input file (PNG, JPG)
-        #[clap(name = "INFILE", parse(from_os_str))]
+        #[arg(name = "INFILE")]
         infile: PathBuf,
 
-        /// Compression format (BC1, BC2 or BC3)
-        #[clap(short = 'f', long = "format", parse(try_from_str = parse_format))]
-        format: Format,
+        /// Compression format
+        #[arg(short = 'f', long = "format")]
+        format: CliFormat,
 
         /// Compressor profile (speed, balanced, quality).
-        #[clap(short = 'p', long = "profile", default_value = "Balanced")]
+        #[arg(short = 'p', long = "profile", default_value = "balanced")]
         profile: Profile,
 
         /// Weigh colours by alpha while fitting. Can improve perceived quality in alpha-blended images.
-        #[clap(long = "weigh-colour-by-alpha")]
+        #[arg(long = "weigh-colour-by-alpha")]
         weigh_colour_by_alpha: bool,
 
         // TODO: replace with something nicer
         /// Colour weights to be used for matching colours during fitting.
-        #[clap(short = 'w', long = "weights")]
+        #[arg(short = 'w', long = "weights")]
         weights: Vec<f32>,
     },
 
     /// Deompress a DDS file to PNG
-    #[clap(name = "decompress")]
+    #[command(name = "decompress")]
     Decompress {
         /// Output file (PNG)
-        #[clap(short = 'o', long = "output", parse(from_os_str))]
+        #[clap(short = 'o', long = "output")]
         outfile: Option<PathBuf>,
 
         /// Input file (DDS)
-        #[clap(name = "INFILE", parse(from_os_str))]
+        #[clap(name = "INFILE")]
         infile: PathBuf,
     },
 }
@@ -104,7 +113,7 @@ fn main() {
                 weights: w,
                 weigh_colour_by_alpha,
             };
-            compress_file(outfile, &infile, format, params)
+            compress_file(outfile, &infile, format.into(), params)
         }
         Opt::Decompress { outfile, infile } => decompress_file(outfile, &infile),
     };
@@ -136,7 +145,7 @@ fn compress_file(outfile: Option<PathBuf>, infile: &Path, format: Format, params
     } else {
         AlphaMode::Straight
     };
-    let mut dds = Dds::new_dxgi( ddsfile::NewDxgiParams {
+    let mut dds = Dds::new_dxgi(ddsfile::NewDxgiParams {
         height: image.height as u32,
         width: image.width as u32,
         depth: None,
@@ -146,8 +155,9 @@ fn compress_file(outfile: Option<PathBuf>, infile: &Path, format: Format, params
         caps2: None,
         is_cubemap: false,
         resource_dimension: D3D10ResourceDimension::Texture2D,
-        alpha_mode: alphamode
-    }).unwrap();
+        alpha_mode: alphamode,
+    })
+    .unwrap();
     dds.data = buf;
 
     let mut outfile = File::create(outfile).expect("Failed to create output file");
@@ -185,25 +195,24 @@ fn decompress_file(outfile: Option<PathBuf>, infile: &Path) {
     image::png::write(&outfile, width as u32, height as u32, &decompressed);
 }
 
-impl FromStr for Profile {
-    type Err = String;
-
-    fn from_str(s: &str) -> Result<Profile, String> {
-        match s.to_lowercase().as_str() {
-            "speed" => Ok(Profile::Speed),
-            "balanced" => Ok(Profile::Balanced),
-            "quality" => Ok(Profile::Quality),
-            _ => Err(String::from("Invalid profile specifier")),
-        }
-    }
-}
-
 impl Into<Algorithm> for Profile {
     fn into(self) -> Algorithm {
         match self {
             Profile::Speed => Algorithm::RangeFit,
             Profile::Balanced => Algorithm::ClusterFit,
             Profile::Quality => Algorithm::IterativeClusterFit,
+        }
+    }
+}
+
+impl Into<Format> for CliFormat {
+    fn into(self) -> Format {
+        match self {
+            CliFormat::Bc1 => Format::Bc1,
+            CliFormat::Bc2 => Format::Bc2,
+            CliFormat::Bc3 => Format::Bc3,
+            CliFormat::Bc4 => Format::Bc4,
+            CliFormat::Bc5 => Format::Bc5,
         }
     }
 }
@@ -238,13 +247,8 @@ fn d3dformat_to_format(d: D3DFormat) -> Format {
     }
 }
 
-fn parse_format(s: &str) -> Result<Format, &'static str> {
-    match s.to_lowercase().as_ref() {
-        "bc1" => Ok(Format::Bc1),
-        "bc2" => Ok(Format::Bc2),
-        "bc3" => Ok(Format::Bc3),
-        "bc4" => Ok(Format::Bc4),
-        "bc5" => Ok(Format::Bc5),
-        _ => Err("invalid compression format specifier"),
-    }
+#[test]
+fn verify_cli() {
+    use clap::CommandFactory;
+    Opt::command().debug_assert();
 }
