@@ -31,7 +31,7 @@ pub fn read(path: &Path) -> RawImage {
     let file = File::open(path).expect("Failed to open file");
     let mut decoder = png::Decoder::new(file);
     decoder.set_transformations(
-        Transformations::EXPAND | Transformations::ALPHA | Transformations::STRIP_16,
+        Transformations::EXPAND | Transformations::STRIP_16,
     );
 
     let mut reader = decoder
@@ -42,9 +42,7 @@ pub fn read(path: &Path) -> RawImage {
     let mut buf = vec![0; reader.output_buffer_size()];
 
     // Read the next frame. Currently this function should only called once.
-    reader.next_frame(&mut buf).unwrap();
-
-    let info = reader.info();
+    let info = reader.next_frame(&mut buf).unwrap();
 
     // expand to rgba
     buf = match info.color_type {
